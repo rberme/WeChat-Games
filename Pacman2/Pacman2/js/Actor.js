@@ -51,7 +51,7 @@ export default class Actor {
     }
 
     render(gameRes) {
-        gameRes.renderImage(3, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+        gameRes.renderImage(3, this.pos[1]+4 , this.pos[0]+4 + this.mainRef.playfieldY, 1, 1);
     }
 
 

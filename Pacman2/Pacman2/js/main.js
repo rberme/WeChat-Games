@@ -74,8 +74,11 @@ export default class Main {
 
         this.renderPlayfield(gameRes);
         for (let key in this.actors) {
-            if (this.actors[key].ghost)
+            if (this.actors[key].ghost){
                 this.actors[key].render(gameRes);
+                // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
+                //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
+            }
         }
     }
 
