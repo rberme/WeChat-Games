@@ -6,26 +6,196 @@ const altasRect = {
     2: [2, 192, 8, 8],//小点
     3: [2, 1, 16, 16],//pacman往左
 }
-
+const y = 0.8 * 0.4
+export const penRoutinePos = {//在围栏中来回移动的参考点
+    1: [{//围栏中左边怪来回的点 (上下) 36-27->9  5+7->12
+        x: 10.6,
+        y: 14,
+        dir: 1,
+        dest: 13.375,
+        speed: 0.48
+    },
+    {
+        x: 10.6,
+        y: 13.375,
+        dir: 2,
+        dest: 14.625,
+        speed: 0.48
+    },
+    {
+        x: 10.6,
+        y: 14.625,
+        dir: 1,
+        dest: 14,
+        speed: 0.48
+    }],
+    2: [{//围栏中中间怪来回的点 (上下)
+        x: 12.5,
+        y: 14,
+        dir: 2,
+        dest: 14.625,
+        speed: 0.48
+    },
+    {
+        x: 12.5,
+        y: 14.625,
+        dir: 1,
+        dest: 13.375,
+        speed: 0.48
+    },
+    {
+        x: 12.5,
+        y: 13.375,
+        dir: 2,
+        dest: 14,
+        speed: 0.48
+    }],
+    3: [{//围栏中右边怪来回的点 (上下)
+        x: 14.4,
+        y: 14,
+        dir: 1,
+        dest: 13.375,
+        speed: 0.48
+    },
+    {
+        x: 14.4,
+        y: 13.375,
+        dir: 2,
+        dest: 14.625,
+        speed: 0.48
+    },
+    {
+        x: 14.4,
+        y: 14.625,
+        dir: 1,
+        dest: 14,
+        speed: 0.48
+    }],
+    4: [{
+        x: 10.6,
+        y: 14,
+        dir: 8,
+        dest: 12.5,
+        speed: y
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }],
+    5: [{
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }],
+    6: [{
+        x: 14.4,
+        y: 14,
+        dir: 4,
+        dest: 12.5,
+        speed: y
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }],
+    7: [{
+        x: 12.5,
+        y: 11,
+        dir: 2,
+        dest: 14,
+        speed: 1.6
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 4,
+        dest: 10.625,
+        speed: 1.6
+    }],
+    8: [{
+        x: 12.5,
+        y: 11,
+        dir: 2,
+        dest: 14,
+        speed: 1.6
+    }],
+    9: [{
+        x: 12.5,
+        y: 11,
+        dir: 2,
+        dest: 14,
+        speed: 1.6
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 8,
+        dest: 14.375,
+        speed: 1.6
+    }],
+    10: [{
+        x: 10.6,
+        y: 14,
+        dir: 8,
+        dest: 12.5,
+        speed: y
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }],
+    11: [{
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }],
+    12: [{
+        x: 14.4,
+        y: 14,
+        dir: 4,
+        dest: 12.5,
+        speed: y
+    },
+    {
+        x: 12.5,
+        y: 14,
+        dir: 1,
+        dest: 11,
+        speed: y
+    }]
+}
 export const allDirection = [1, 4, 2, 8];//左,上,右,下
 export const axisIncrement = {
     0: {
         axis: 0,
         increment: 0
     },
-    1: {//左
+    1: {//上
         axis: 0,
         increment: -1
     },
-    2: {//右
+    2: {//下
         axis: 0,
         increment: +1
     },
-    4: {//上
+    4: {//左
         axis: 1,
         increment: -1
     },
-    8: {//下
+    8: {//右
         axis: 1,
         increment: +1
     }
@@ -34,15 +204,15 @@ export const axisIncrement = {
 export const actorInitial = [//怪物的初始位置，方向，散开点
     {//玩家1的位置方向
         x: 13.5,
-        y: 29,
+        y: 23,
         dir: 4
     },
     {//以下为4个怪物的数据
         x: 13.5,
-        y: 17,
-        dir: 1,
-        scatterX: 57,
-        scatterY: -4
+        y: 11,
+        dir: 4,
+        scatterX: 25,
+        scatterY: -3
     },
     {
         x: 13.5,
@@ -405,6 +575,13 @@ export const levelConfig = [{},//关卡配置数据
     penLeavingLimits: [0, 0, 30, 60]
 },
 ]
+
+export const oppositeDirections = {
+    1: 2,
+    2: 1,
+    4: 8,
+    8: 4
+}
 
 let instance
 export default class GameRes {

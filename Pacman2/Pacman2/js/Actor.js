@@ -1,5 +1,5 @@
 
-import { levelConfig, actorInitial, axisIncrement, actorMode, allDirection, tunneLadit, penExit } from './GameRes'
+import { levelConfig, actorInitial, axisIncrement, actorMode, allDirection, tunneLadit, penExit, oppositeDirections, penRoutinePos } from './GameRes'
 
 export default class Actor {
     constructor(id, mainRef) {
@@ -9,15 +9,37 @@ export default class Actor {
 
     resetActor(config) {
         let b = actorInitial[this.id];
-        this.pos = [b.x * 8, b.y * 8];
+        this.pos = [b.y * 8, b.x * 8];
         this.tilePos = [b.y * 8, b.x * 8];
+
+        this.targetPos = [b.scatterY * 8, b.scatterX * 8];
+        this.scatterPos = [b.scatterY * 8, b.scatterX * 8];
         this.lastActiveDir = this.dir = b.dir;
         this.currentSpeed = 0;
         this.physicalSpeed = 0;
         this.updateSpeed(0);
+        this.reverseDirectionsNext = this.freeToLeavePen = this.modeChangedWhileInPen = this.eatenInThisFrightMode = false;
+        this.updateTargetPlayerId();
     }
 
     update() {
+        if (this.mainRef.gameplayMode == 0 ||
+            this.ghost && this.mainRef.gameplayMode == 1 && (this.mode == 8 || this.mode == 64)) {
+            // if (this.requestedDir != 0) {//玩家请求的方向
+            //     this.z(this.requestedDir);
+            //     this.requestedDir = 0
+            // }
+            if (this.followingRoutine) {
+                this.j();
+                //this.mode == 64 && this.j()
+            } else {
+                this.e();
+                //this.mode == 8 && this.e()
+            }
+        }
+    }
+
+    e() {
         if (this.dir) {
             if (this.speedIntervals[this.mainRef.intervalTime]) {
                 var b = axisIncrement[this.dir];
@@ -29,38 +51,75 @@ export default class Actor {
     }
 
     render(gameRes) {
-        gameRes.renderImage(3, this.pos[0] + 4, this.pos[1] + 4, 1, 1);
+        gameRes.renderImage(3, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
     }
 
 
     ///////////////////////////////////////////////////////////
-
-    // // m() {
-    // //     var b = A[this.routineToFollow][this.routineMoveId];
-    // //     if (b) {
-    // //         if (this.speedIntervals[g.intervalTime]) {
-    // //             var c = directionIncrement[this.dir];
-    // //             this.pos[c.axis] += c.increment;
-    // //             switch (this.dir) {
-    // //                 case 1:
-    // //                 case 4:
-    // //                     if (this.pos[c.axis] < b.dest * 8) {
-    // //                         this.pos[c.axis] = b.dest * 8;
-    // //                         this.proceedToNextRoutineMove = a
-    // //                     }
-    // //                     break;
-    // //                 case 2:
-    // //                 case 8:
-    // //                     if (this.pos[c.axis] > b.dest * 8) {
-    // //                         this.pos[c.axis] = b.dest * 8;
-    // //                         this.proceedToNextRoutineMove = a
-    // //                     }
-    // //                     break
-    // //             }
-    // //             this.b()
-    // //         }
-    // //     }
-    // // };
+    j() {
+        if (this.routineMoveId == -1 || this.proceedToNextRoutineMove)
+            this.v();
+        this.m()
+    };
+    
+    v() {
+        this.routineMoveId++;
+        if (this.routineMoveId == penRoutinePos[this.routineToFollow].length) {
+            // if (this.mode == 16 && this.freeToLeavePen && !this.mainRef.ghostExitingPenNow) {
+            //     this.eatenInThisFrightMode ? this.changeActorMode(128) : this.changeActorMode(32);
+            //     return
+            // } else if (this.mode == 32 || this.mode == 128) {
+            //     this.pos = [s[0], s[1] + 4];
+            //     this.dir = this.modeChangedWhileInPen ? 8 : 4;
+            //     var b = g.mainGhostMode;
+            //     if (this.mode == 128 && b == 4) b = g.lastMainGhostMode;
+            //     this.changeActorMode(b);
+            //     return
+            // } else if (this.mode == 64) {
+            //     if (this.id == g.playerCount || this.freeToLeavePen) this.changeActorMode(128);
+            //     else {
+            //         this.eatenInThisFrightMode = true;
+            //         this.changeActorMode(16)
+            //     }
+            //     return
+            // } else
+            this.routineMoveId = 0;
+        }
+        b = penRoutinePos[this.routineToFollow][this.routineMoveId];
+        this.pos[0] = b.y * 8;
+        this.pos[1] = b.x * 8;
+        this.dir = b.dir;
+        this.physicalSpeed = 0;
+        this.speedIntervals = this.mainRef.getSpeedIntervals(b.speed);
+        this.proceedToNextRoutineMove = false;
+        //this.b()
+    };
+    m() {
+        var b = penRoutinePos[this.routineToFollow][this.routineMoveId];
+        if (b) {
+            if (this.speedIntervals[this.mainRef.intervalTime]) {
+                var c = axisIncrement[this.dir];
+                this.pos[c.axis] += c.increment;
+                switch (this.dir) {
+                    case 1://上
+                    case 4://左
+                        if (this.pos[c.axis] < b.dest * 8) {
+                            this.pos[c.axis] = b.dest * 8;
+                            this.proceedToNextRoutineMove = true
+                        }
+                        break;
+                    case 2://下
+                    case 8://右
+                        if (this.pos[c.axis] > b.dest * 8) {
+                            this.pos[c.axis] = b.dest * 8;
+                            this.proceedToNextRoutineMove = true
+                        }
+                        break
+                }
+                //this.b()
+            }
+        }
+    };
     specialField() {//特殊位置的操作 n
         //在隧道
         if (this.pos[0] == tunneLadit[0].x * 8 && this.pos[1] == tunneLadit[0].y * 8) {
@@ -81,7 +140,7 @@ export default class Actor {
 
 
     applyNextDir() {//u
-        this.specialField();
+        //this.specialField();
         this.ghost && this.updateNextDir(false);
         var b = this.mainRef.playfield[this.pos[0]][this.pos[1]];
         if (b.intersection) {
@@ -123,7 +182,7 @@ export default class Actor {
     updateTilePos(b) {
         this.mainRef.tilesChanged = true;
         if (this.reverseDirectionsNext) {
-            this.dir = g.oppositeDirections[this.dir];
+            this.dir = oppositeDirections[this.dir];
             this.nextDir = 0;
             this.reverseDirectionsNext = false;
             this.updateNextDir(true)
@@ -160,14 +219,14 @@ export default class Actor {
                 case 2:
                 case 1:
                 case 8:
-                    if ((this.dir & field.allowedDir) == 0 && field.allowedDir == g.oppositeDirections[this.dir]) //死路 需要回头
-                        this.nextDir = this.mainRef.oppositeDirections[this.dir];
+                    if ((this.dir & field.allowedDir) == 0 && field.allowedDir == oppositeDirections[this.dir]) //死路 需要回头
+                        this.nextDir = oppositeDirections[this.dir];
                     else {
                         let minDist = 99999999999;
                         let bestDir = 0;
                         for (var k in allDirection) {//从所有可走的方向中找出离目标点最近的方向
                             var dir = allDirection[k];
-                            if (h.allowedDir & dir && this.dir != g.oppositeDirections[dir]) {
+                            if (field.allowedDir & dir && this.dir != oppositeDirections[dir]) {
                                 let temp = axisIncrement[dir];
                                 var x = [tilePos[0], tilePos[1]];
                                 x[temp.axis] += temp.increment;
@@ -182,11 +241,11 @@ export default class Actor {
                     }
                     break;
                 case 4:
-                    if ((this.dir & field.allowedDir) == 0 && field.allowedDir == g.oppositeDirections[this.dir])//死路 需要回头
-                        this.nextDir = this.mainRef.oppositeDirections[this.dir];
+                    if ((this.dir & field.allowedDir) == 0 && field.allowedDir == oppositeDirections[this.dir])//死路 需要回头
+                        this.nextDir = oppositeDirections[this.dir];
                     else {
                         do randDir = allDirection[Math.floor(this.mainRef.rand() * 4)];
-                        while ((randDir & h.allowedDir) == 0 || randDir == g.oppositeDirections[this.dir]);
+                        while ((randDir & h.allowedDir) == 0 || randDir == oppositeDirections[this.dir]);
                         this.nextDir = f
                     }
                     break
