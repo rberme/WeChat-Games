@@ -2,9 +2,9 @@ import GameRes from './GameRes'
 import Actor from './Actor'
 
 
-import { allPaths, noDotPaths, gameMode, levelConfig, actorMode } from './GameRes'
+import { allPaths, noDotPaths, gameMode, levelConfig, actorMode, times } from './GameRes'
 
-
+let D = 60;
 
 let canvas = wx.createCanvas()
 let ctx = canvas.getContext('2d')
@@ -16,29 +16,67 @@ export default class Main {
     constructor() {
         this.playfieldX = 0;
         this.playfieldY = 48;
-        this.playerCount = 1;
-        this.speedIntervals = [];
-        this.determinePlayfieldDimensions()
-        this.createActors();
-        this.level = 0;
+
         //this.restartGameplay()
         this.debugFrame = 0;
         this.restart();
     }
 
-    restartGameplay() {
-        this.level++;
-        this.gameplayModeTime = 0;
-        this.intervalTime = 0;
+    newGame() {
+        this.playerCount = 1;
+        this.createActors();
+        this.startGameplay();
+    }
 
+    startGameplay() {
+        this.level = 0;
+        this.newLevel(true);
+    }
+
+    newLevel(b) {
+        this.level++;
         this.levels = this.level >= levelConfig.length ? levelConfig[levelConfig.length - 1] : levelConfig[this.level];
-        this.preparePlayfield();
-        this.preparePaths();
-        this.prepareAllowedDirections();
+        // start issue 14: Ghosts stay blue permanently on restart
+        if ((this.levels.frightTime > 0) && (this.levels.frightTime <= 6))
+            this.levels.frightTime = Math.round(this.levels.frightTime * D);
+        // end issue 14
+        this.levels.frightTotalTime = this.levels.frightTime + this.timing[1] * (this.levels.frightBlinkCount * 2 - 1);
+        for (var k in this.actors)
+            this.actors[k].dotCount = 0;
+        this.alternatePenLeavingScheme = false;
+        this.lostLifeOnThisLevel = false;
+        this.resetPlayfield();
+        this.restartGameplay(b);
+        //g.level == 256 && g.killScreen()
+    }
+
+
+
+    restartGameplay(b) {
+        this.seed(0);
+        this.frightModeTime = 0;
+        this.intervalTime = 0;
+        this.gameplayModeTime = 0;
+        this.fruitTime = 0;
+        this.ghostModeSwitchPos = 0;
+        this.ghostModeTime = this.levels.ghostModeSwitchTimes[0] * D;
+        this.ghostExitingPenNow = false;
+        this.ghostEyesCount = 0;
+        this.tilesChanged = false;
+
+        //g.updateCruiseElroySpeed();
+        //g.hideFruit();
+        //g.resetForcePenLeaveTime();
         this.restartActors();
+        //g.updateActorPositions();
         this.switchMainGhostMode(actorMode.RESET, true);
-        for (var c = this.playerCount + 1; c < this.playerCount + 1; c++)
-            this.actors[c].changeActorMode(16);
+        for (var c = this.playerCount + 1; c < this.playerCount + 4; c++)
+            this.actors[c].changeActorMode(actorMode.WAIT);
+        //g.dotEatingChannel = [0, 0];
+        //g.dotEatingSoundPart = [1, 1];
+        //g.clearDotEatingNow();
+        b ? this.changeGameplayMode(4) : this.changeGameplayMode(6)
+
     }
     restart() {
         requestAnimationFrame(
@@ -46,6 +84,7 @@ export default class Main {
             canvas
         )
     }
+
 
 
 
@@ -74,7 +113,7 @@ export default class Main {
 
         this.renderPlayfield(gameRes);
         for (let key in this.actors) {
-            if (this.actors[key].ghost){
+            if (this.actors[key].ghost) {
                 this.actors[key].render(gameRes);
                 // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
                 //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
@@ -82,18 +121,28 @@ export default class Main {
         }
     }
 
-    // 游戏逻辑更新主函数
-    update() {
+    moveActors = function () {
         for (let key in this.actors) {
             if (this.actors[key].ghost)
                 this.actors[key].update();
         }
+    };
+    // 游戏逻辑更新主函数
+    update() {
+        if (this.gameplayMode == 13) {
+
+        }
+        else {
+            this.moveActors();
+
+        }
+        this.handleTimers();
     }
 
     // 实现游戏帧循环
     loop() {
         this.debugFrame++;
-        this.intervalTime = (this.intervalTime + 1) % 60;
+        this.intervalTime = (this.intervalTime + 1) % D;
         if (this.debugFrame < 30) {
             requestAnimationFrame(
                 this.loop.bind(this),
@@ -102,7 +151,9 @@ export default class Main {
             return;
         }
         if (this.debugFrame == 30) {
-            this.restartGameplay();
+            this.speedIntervals = [];
+            this.initializeTickTimer();
+            this.newGame();
         }
 
         this.update()
@@ -124,7 +175,7 @@ export default class Main {
             canvas
         )
     }
-    //playfield///////////////////////////////////////////////////////////////////////////////////////
+    // //playfield///////////////////////////////////////////////////////////////////////////////////////
     determinePlayfieldDimensions() {
         this.playfieldWidth = 0;//可移动到的宽度
         this.playfieldHeight = 0;//可移动到的高度
@@ -140,6 +191,7 @@ export default class Main {
                     this.playfieldHeight = path
             }
         }
+        this.playfieldHeight++;
     }
 
     renderPlayfield(gameRes) {
@@ -278,6 +330,21 @@ export default class Main {
 
 
     ///////////////////////////////////////////////////////////////////////////////////
+
+    resetPlayfield() {
+        this.dotsRemaining = 0;
+        this.dotsEaten = 0;
+        // g.playfieldEl.innerHTML = "";
+        // g.prepareElement(g.playfieldEl, 256, 0);
+        this.determinePlayfieldDimensions();//确定地图宽高
+        this.preparePlayfield();//
+        this.preparePaths();
+        this.prepareAllowedDirections();
+        // g.createPlayfieldElements();
+        // g.createActorElements()
+    };
+
+
     createActors() {
         this.actors = [];
         for (let i = 0; i < this.playerCount + 4; ++i) {
@@ -305,23 +372,25 @@ export default class Main {
                     actor.reverseDirectionsNext = true
             }
         } else {
-            // f = g.mainGhostMode;
-            // if (b == 4 && g.mainGhostMode != 4) g.lastMainGhostMode = g.mainGhostMode;
-            // g.mainGhostMode = b;
-            // if (b == 4 || f == 4) g.playAmbientSound();
-            // switch (actorMode) {
-            //     case 1:
-            //     case actorMode.RESET:
-            //         this.currentPlayerSpeed = this.levels.playerSpeed * 0.8;
-            //         this.currentDotEatingSpeed = this.levels.dotEatingSpeed * 0.8;
-            //         break;
-            //     // case 4:
-            //     //     g.currentPlayerSpeed = g.levels.playerFrightSpeed * 0.8;
-            //     //     g.currentDotEatingSpeed = g.levels.dotEatingFrightSpeed * 0.8;
-            //     //     g.frightModeTime = g.levels.frightTotalTime;
-            //     //     g.modeScoreMultiplier = 1;
-            //     //     break
-            // }
+            let oldMode = this.mainGhostMode;
+            if (actorMode == 4 && this.mainGhostMode != 4)
+                this.lastMainGhostMode = this.mainGhostMode;
+            this.mainGhostMode = actorMode;
+            // if (actorMode == 4 || oldMode == 4) 
+            //     this.playAmbientSound();
+            switch (actorMode) {
+                case 1:
+                case actorMode.RESET://2
+                    this.currentPlayerSpeed = this.levels.playerSpeed * 0.8;
+                    this.currentDotEatingSpeed = this.levels.dotEatingSpeed * 0.8;
+                    break;
+                // case 4:
+                //     g.currentPlayerSpeed = g.levels.playerFrightSpeed * 0.8;
+                //     g.currentDotEatingSpeed = g.levels.dotEatingFrightSpeed * 0.8;
+                //     g.frightModeTime = g.levels.frightTotalTime;
+                //     g.modeScoreMultiplier = 1;
+                //     break
+            }
             for (let k in this.actors) {
                 actor = this.actors[k];
                 if (actor.ghost) {
@@ -330,8 +399,8 @@ export default class Main {
                     if (actorMode == 4)
                         actor.eatenInThisFrightMode = false;
                     if (actor.mode != 8 && actor.mode != 16 && actor.mode != 32 && actor.mode != 128 && actor.mode != 64 || c) {
-                        // if (!c && actor.mode != 4 && actor.mode != actorMode) 
-                        //     actor.reverseDirectionsNext = true;
+                        if (!c && actor.mode != 4 && actor.mode != actorMode)
+                            actor.reverseDirectionsNext = true;
                         actor.changeActorMode(actorMode)
                     }
                 } else {
@@ -354,7 +423,7 @@ export default class Main {
             var c = 0,
                 d = 0;
             this.speedIntervals[speed] = [];
-            for (var i = 0; i < 60; i++) {
+            for (var i = 0; i < D; i++) {
                 c += speed;
                 if (Math.floor(c) > d) {
                     this.speedIntervals[speed].push(true);
@@ -367,5 +436,101 @@ export default class Main {
         return this.speedIntervals[speed]
     };
 
+    resetForcePenLeaveTime() {
+        this.forcePenLeaveTime = this.levels.penForceTime * D
+    };
 
+    handleForcePenLeaveTimer() {
+        if (this.forcePenLeaveTime) {
+            this.forcePenLeaveTime--;
+            if (this.forcePenLeaveTime <= 0) {
+                for (var b = 1; b <= 3; b++) {
+                    if (this.actors[this.playerCount + b].mode == actorMode.WAIT) {
+                        this.actors[this.playerCount + b].freeToLeavePen = true;
+                        break;
+                    }
+                }
+                this.resetForcePenLeaveTime()
+            }
+        }
+    }
+
+    finishFrightMode = function () {
+        this.switchMainGhostMode(this.lastMainGhostMode, false)
+    };
+    handleGhostModeTimer = function () {
+        if (this.frightModeTime) {
+            this.frightModeTime--;
+            if (this.frightModeTime <= 0) {
+                this.frightModeTime = 0;
+                this.finishFrightMode()
+            }
+        } else if (this.ghostModeTime > 0) {
+            this.ghostModeTime--;
+            if (this.ghostModeTime <= 0) {
+                this.ghostModeTime = 0;
+                this.ghostModeSwitchPos++;
+                if (this.levels.ghostModeSwitchTimes[this.ghostModeSwitchPos]) {
+                    this.ghostModeTime = this.levels.ghostModeSwitchTimes[this.ghostModeSwitchPos] * D;
+                    switch (this.mainGhostMode) {
+                        case 2:
+                            this.switchMainGhostMode(1, false);
+                            break;
+                        case 1:
+                            this.switchMainGhostMode(2, false);
+                            break
+                    }
+                }
+            }
+        }
+    };
+    handleGameplayModeTimer() {
+        if (this.gameplayModeTime) {
+            this.gameplayModeTime--;
+        }
+    }
+    handleTimers() {
+        if (this.gameplayMode == 0) {
+            this.handleForcePenLeaveTimer();
+            // this.handleFruitTimer();
+            // this.handleGhostModeTimer()
+        }
+        this.handleGameplayModeTimer()
+    };
+
+    changeGameplayMode(_mode) {
+        this.gameplayMode = _mode;
+        switch (_mode) {
+            case 0://游戏开始
+                //g.playAmbientSound();
+                break;
+        }
+    }
+
+    initializeTickTimer() {
+        // window.clearInterval(g.tickTimer);
+        // g.fps = C[g.fpsChoice];
+        // g.tickInterval = 1E3 / g.fps;//计时器的时间间隔
+        //g.tickMultiplier = D / g.fps;
+        this.timing = {};
+        for (var b in times) {
+            var c = times[b];
+            this.timing[b] = Math.round(c * D)
+        }
+        //g.lastTime = (new Date).getTime();
+        //g.lastTimeDelta = 0;
+        //g.lastTimeSlownessCount = 0;
+        // g.tickTimer = window.setInterval(g.tick, g.tickInterval)
+    };
+
+
+    rand() {
+        var b = 4294967296,
+            c = 134775813;
+        c = c * this.randSeed + 1;
+        return (this.randSeed = c % b) / b
+    };
+    seed(b) {
+        this.randSeed = b
+    };
 }

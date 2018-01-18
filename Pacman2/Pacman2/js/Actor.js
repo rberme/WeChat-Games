@@ -24,18 +24,18 @@ export default class Actor {
 
     update() {
         if (this.mainRef.gameplayMode == 0 ||
-            this.ghost && this.mainRef.gameplayMode == 1 && (this.mode == 8 || this.mode == 64)) {
-            // if (this.requestedDir != 0) {//玩家请求的方向
-            //     this.z(this.requestedDir);
-            //     this.requestedDir = 0
-            // }
-            if (this.followingRoutine) {
-                this.j();
-                //this.mode == 64 && this.j()
-            } else {
-                this.e();
-                //this.mode == 8 && this.e()
-            }
+          this.ghost && this.mainRef.gameplayMode == 1 && (this.mode == 8 || this.mode == 64)) {
+        if (this.requestedDir != 0) {//玩家请求的方向
+            this.z(this.requestedDir);
+            this.requestedDir = 0
+        }
+        if (this.followingRoutine) {
+            this.j();
+            this.mode == 64 && this.j()
+        } else {
+            this.e();
+            this.mode == 8 && this.e()
+        }
         }
     }
 
@@ -51,7 +51,7 @@ export default class Actor {
     }
 
     render(gameRes) {
-        gameRes.renderImage(3, this.pos[1]+4 , this.pos[0]+4 + this.mainRef.playfieldY, 1, 1);
+        gameRes.renderImage(3, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
     }
 
 
@@ -61,38 +61,38 @@ export default class Actor {
             this.v();
         this.m()
     };
-    
+
     v() {
         this.routineMoveId++;
         if (this.routineMoveId == penRoutinePos[this.routineToFollow].length) {
-            // if (this.mode == 16 && this.freeToLeavePen && !this.mainRef.ghostExitingPenNow) {
-            //     this.eatenInThisFrightMode ? this.changeActorMode(128) : this.changeActorMode(32);
-            //     return
-            // } else if (this.mode == 32 || this.mode == 128) {
-            //     this.pos = [s[0], s[1] + 4];
-            //     this.dir = this.modeChangedWhileInPen ? 8 : 4;
-            //     var b = g.mainGhostMode;
-            //     if (this.mode == 128 && b == 4) b = g.lastMainGhostMode;
-            //     this.changeActorMode(b);
-            //     return
-            // } else if (this.mode == 64) {
-            //     if (this.id == g.playerCount || this.freeToLeavePen) this.changeActorMode(128);
-            //     else {
-            //         this.eatenInThisFrightMode = true;
-            //         this.changeActorMode(16)
-            //     }
-            //     return
-            // } else
-            this.routineMoveId = 0;
+            if (this.mode == 16 && this.freeToLeavePen && !this.mainRef.ghostExitingPenNow) {
+                this.eatenInThisFrightMode ? this.changeActorMode(128) : this.changeActorMode(actorMode.EXITINGPEN);
+                return
+            } else if (this.mode == actorMode.EXITINGPEN || this.mode == 128) {
+                this.pos = [penExit[0], penExit[1] + 4];
+                this.dir = this.modeChangedWhileInPen ? 8 : 4;
+                var m = this.mainRef.mainGhostMode;
+                if (this.mode == 128 && m == 4) m = this.mainRef.lastMainGhostMode;
+                this.changeActorMode(m);
+                return
+            } else if (this.mode == 64) {
+                if (this.id == this.mainRef.playerCount || this.freeToLeavePen)
+                    this.changeActorMode(128);
+                else {
+                    this.eatenInThisFrightMode = true;
+                    this.changeActorMode(16)
+                }
+                return
+            } else
+                this.routineMoveId = 0;
         }
-        b = penRoutinePos[this.routineToFollow][this.routineMoveId];
+        let b = penRoutinePos[this.routineToFollow][this.routineMoveId];
         this.pos[0] = b.y * 8;
         this.pos[1] = b.x * 8;
         this.dir = b.dir;
         this.physicalSpeed = 0;
         this.speedIntervals = this.mainRef.getSpeedIntervals(b.speed);
         this.proceedToNextRoutineMove = false;
-        //this.b()
     };
     m() {
         var b = penRoutinePos[this.routineToFollow][this.routineMoveId];
@@ -130,7 +130,7 @@ export default class Actor {
             this.pos[1] = (tunneLadit[0].x + 1) * 8
         }
 
-        this.mode == actorMode.WAIT &&
+        this.mode == 8 &&
             this.pos[0] == penExit[0] &&
             this.pos[1] == penExit[1] &&
             this.changeActorMode(64);//怪物出门
@@ -256,7 +256,18 @@ export default class Actor {
 
 
     changeActorMode(newMode) {
+        let oldMode = this.mode;
         this.mode = newMode;
+        switch (oldMode) {
+            case 32:
+                this.mainRef.ghostExitingPenNow = false;
+                break;
+            // case 8:
+            //     this.mainRef.ghostEyesCount > 0 && g.ghostEyesCount--;
+            //     this.mainRef.ghostEyesCount == 0 && g.playAmbientSound();
+            //     break
+        }
+
         switch (newMode) {
             case actorMode.RESET://回到固定目标点上
                 this.targetPos = this.scatterPos;
@@ -264,16 +275,44 @@ export default class Actor {
                 this.tunnelSpeed = this.mainRef.levels.ghostTunnelSpeed * 0.8;
                 this.followingRoutine = false;
                 break;
-            case actorMode.WAIT://0b00001000://在围栏(pen)里徘徊
+            case 0b00001000://在围栏(pen)里徘徊
                 this.tunnelSpeed = this.fullSpeed = 1.6;
-                this.targetPos = [s[0], s[1]];
+                this.targetPos = [penExit[0], penExit[1]];
                 this.freeToLeavePen = this.followingRoutine = false;
                 break;
-            case 0b00010000://16
+            case actorMode.WAIT://0b00010000://16 在围栏(pen)里徘徊
                 this.updateTargetPlayerId();
                 this.routineMoveId = -1;
                 this.followingRoutine = true;
+                switch (this.id) {
+                    case this.mainRef.playerCount + 1:
+                        this.routineToFollow = 2;
+                        break;
+                    case this.mainRef.playerCount + 2:
+                        this.routineToFollow = 1;
+                        break;
+                    case this.mainRef.playerCount + 3:
+                        this.routineToFollow = 3;
+                        break
+                }
                 break;
+            case actorMode.EXITINGPEN://32
+                this.followingRoutine = true;
+                this.routineMoveId = -1;
+                switch (this.id) {
+                    case g.playerCount + 1:
+                        this.routineToFollow = 5;
+                        break;
+                    case g.playerCount + 2:
+                        this.routineToFollow = 4;
+                        break;
+                    case g.playerCount + 3:
+                        this.routineToFollow = 6;
+                        break
+                }
+                this.mainRef.ghostExitingPenNow = true;
+                break;
+
         }
         this.updateSpeed();
     }
@@ -302,5 +341,5 @@ export default class Actor {
             this.physicalSpeed = tempSpeed;
             this.speedIntervals = this.mainRef.getSpeedIntervals(this.physicalSpeed)
         }
-    };
+    }
 }

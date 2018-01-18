@@ -977,7 +977,7 @@ google.pacman ||
                     speed: y
                 }]
             },
-            B = {
+            B = {//图集坐标
                 1: {
                     actors: [{
                         ghost: e,
@@ -1174,6 +1174,7 @@ google.pacman ||
         function E(_id) {
             this.id = _id
         }
+    
         E.prototype.initActorData = function () {//创建角色
             var b = r[g.playerCount][this.id];
             this.pos = [b.y * 8, b.x * 8];//actor的位置     一个格子的宽高为8

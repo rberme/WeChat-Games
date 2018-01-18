@@ -4,173 +4,173 @@ const altasRect = {
     0: [322, 2, 224, 248],      //背景框蓝色
     1: [480, 0, 224, 248],       //背景框白色
     2: [2, 192, 8, 8],//小点
-    3: [2, 2, 16, 16],//pacman往左
+    3: [2, 1, 16, 16],//pacman往左
 }
 const y = 0.8 * 0.4
 export const penRoutinePos = {//在围栏中来回移动的参考点
     1: [{//围栏中左边怪来回的点 (上下) 36-26->10  5+7->12
-        x: 10.6,
+        x: 11.6,
         y: 14,
         dir: 1,
         dest: 13.375,
         speed: 0.48
     },
     {
-        x: 10.6,
+        x: 11.6,
         y: 13.375,
         dir: 2,
         dest: 14.625,
         speed: 0.48
     },
     {
-        x: 10.6,
+        x: 11.6,
         y: 14.625,
         dir: 1,
         dest: 14,
         speed: 0.48
     }],
     2: [{//围栏中中间怪来回的点 (上下)
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 2,
         dest: 14.625,
         speed: 0.48
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14.625,
         dir: 1,
         dest: 13.375,
         speed: 0.48
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 13.375,
         dir: 2,
         dest: 14,
         speed: 0.48
     }],
     3: [{//围栏中右边怪来回的点 (上下)
-        x: 14.4,
+        x: 15.4,
         y: 14,
         dir: 1,
         dest: 13.375,
         speed: 0.48
     },
     {
-        x: 14.4,
+        x: 15.4,
         y: 13.375,
         dir: 2,
         dest: 14.625,
         speed: 0.48
     },
     {
-        x: 14.4,
+        x: 15.4,
         y: 14.625,
         dir: 1,
         dest: 14,
         speed: 0.48
     }],
     4: [{
-        x: 10.6,
+        x: 11.6,
         y: 14,
         dir: 8,
         dest: 12.5,
         speed: y
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
         speed: y
     }],
     5: [{
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
         speed: y
     }],
     6: [{
-        x: 14.4,
+        x: 15.4,
         y: 14,
         dir: 4,
         dest: 12.5,
         speed: y
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
         speed: y
     }],
     7: [{
-        x: 12.5,
+        x: 13.5,
         y: 11,
         dir: 2,
         dest: 14,
         speed: 1.6
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 4,
         dest: 10.625,
         speed: 1.6
     }],
     8: [{
-        x: 12.5,
+        x: 13.5,
         y: 11,
         dir: 2,
         dest: 14,
         speed: 1.6
     }],
     9: [{
-        x: 12.5,
+        x: 13.5,
         y: 11,
         dir: 2,
         dest: 14,
         speed: 1.6
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 8,
         dest: 14.375,
         speed: 1.6
     }],
     10: [{
-        x: 10.6,
+        x: 11.6,
         y: 14,
         dir: 8,
         dest: 12.5,
         speed: y
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
         speed: y
     }],
     11: [{
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
         speed: y
     }],
     12: [{
-        x: 14.4,
+        x: 15.4,
         y: 14,
         dir: 4,
         dest: 12.5,
         speed: y
     },
     {
-        x: 12.5,
+        x: 13.5,
         y: 14,
         dir: 1,
         dest: 11,
@@ -218,22 +218,22 @@ export const actorInitial = [//怪物的初始位置，方向，散开点
         x: 13.5,
         y: 14,
         dir: 2,
-        scatterX: 0,
+        scatterX: 2,
         scatterY: -3
     },
     {
         x: 11.625,
         y: 14,
         dir: 1,
-        scatterX: 57,
-        scatterY: 20
+        scatterX: 27,
+        scatterY: 32
     },
     {
         x: 15.375,
         y: 14,
         dir: 1,
         scatterX: 0,
-        scatterY: 20
+        scatterY: 32
     }
 ]//一个玩家时
 //...
@@ -546,7 +546,8 @@ export const noDotPaths = [
 
 export const actorMode = {
     RESET: 0b00000010,
-    WAIT: 0b00001000,
+    WAIT: 0b00010000,
+    EXITINGPEN: 0b00100000,
 }
 
 export const gameMode = {
@@ -581,6 +582,27 @@ export const oppositeDirections = {
     2: 1,
     4: 8,
     8: 4
+}
+
+export const times = {//倒计时时间 秒
+    0: 0.16,
+    1: 0.23,
+    2: 1,
+    3: 1,
+    4: 2.23,
+    5: 0.3,
+    6: 1.9,
+    7: 2.23,
+    8: 1.9,
+    9: 5,
+    10: 1.9,
+    11: 1.18,
+    12: 0.3,
+    13: 0.5,
+    14: 1.9,
+    15: 9,
+    16: 10,
+    17: 0.26
 }
 
 let instance
