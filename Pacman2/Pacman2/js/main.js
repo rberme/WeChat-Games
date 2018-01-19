@@ -2,18 +2,47 @@ import GameRes from './GameRes'
 import Actor from './Actor'
 
 
-import { allPaths, noDotPaths, gameMode, levelConfig, actorMode, times } from './GameRes'
+import { allPaths, noDotPaths, gameMode, levelConfig, actorMode, times, dotCount } from './GameRes'
 
 let D = 60;
 
 let canvas = wx.createCanvas()
 let ctx = canvas.getContext('2d')
 let gameRes = new GameRes(ctx, canvas.width, canvas.height);
+
+let PlatformDifference = {
+    "ios": {
+        touchstart: "ontouchstart",
+        touchmove: "ontouchmove",
+        touchcancel: "ontouchcancel",
+        touchend: "ontouchend"
+    },
+    "android": {
+        touchstart: "ontouchstart",
+        touchmove: "ontouchmove",
+        touchcancel: "ontouchcancel",
+        touchend: "ontouchend"
+    },
+    "devtools": {
+        touchstart: "touchstart",
+        touchmove: "touchmove",
+        touchcancel: "touchcancel",
+        touchend: "touchend"
+    }
+}
+
 /**
  * 游戏主函数
  */
 export default class Main {
     constructor() {
+        this.platform = "devtools";
+        this.touchHandler = this.touchEventHandler.bind(this)
+        //wx.onTouchMove(this.touchHandler);
+        wx.onTouchStart(this.touchHandler);
+        wx.onTouchEnd(this.touchHandler);
+        wx.onTouchCancel(this.touchHandler);
+
         this.playfieldX = 0;
         this.playfieldY = 48;
 
@@ -29,7 +58,12 @@ export default class Main {
     }
 
     startGameplay() {
+        this.score = [0, 0];
+        this.extraLifeAwarded = [false, false];
+        this.lives = 3;
         this.level = 0;
+        this.paused = false;
+        this.globalTime = 0;
         this.newLevel(true);
     }
 
@@ -64,7 +98,7 @@ export default class Main {
         this.ghostEyesCount = 0;
         this.tilesChanged = false;
 
-        //g.updateCruiseElroySpeed();
+        this.updateCruiseElroySpeed();
         //g.hideFruit();
         this.resetForcePenLeaveTime();
         this.restartActors();
@@ -91,7 +125,26 @@ export default class Main {
     //游戏结束后的触摸事件处理逻辑
     touchEventHandler(e) {
         // e.preventDefault()
+        if (e.type == PlatformDifference[this.platform].touchstart) {
+            this.touchStartX = e.touches[0].clientX
+            this.touchStartY = e.touches[0].clientY
+        } else if (e.type == PlatformDifference[this.platform].touchend) {
+            let deltaX = e.changedTouches[0].clientX - this.touchStartX;
+            let deltaY = e.changedTouches[0].clientY - this.touchStartY;
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0.5)//右
+                    this.actors[0].requestedDir = 2;
+                else if (deltaX < -0.5)//左
+                    this.actors[0].requestedDir = 1;
+            }
+            else {
+                if (deltaY > 0.5)//下
+                    this.actors[0].requestedDir = 8;
+                else if (deltaY < -0.5)//上
+                    this.actors[0].requestedDir = 4;
+            }
 
+        }
         // let x = e.touches[0].clientX
         // let y = e.touches[0].clientY
 
@@ -113,31 +166,48 @@ export default class Main {
 
         this.renderPlayfield(gameRes);
         for (let key in this.actors) {
-            if (this.actors[key].ghost) {
-                this.actors[key].render(gameRes);
-                // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
-                //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
-            }
+            //if (this.actors[key].ghost) 
+            this.actors[key].render(gameRes);
+            // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
+            //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
+
         }
 
         if (this.showReady)
-            gameRes.renderImage(4,114,189,1,1)
+            gameRes.renderImage(4, 114, 189, 1, 1)
     }
 
     moveActors = function () {
         for (let key in this.actors) {
-            if (this.actors[key].ghost)
-                this.actors[key].update();
+            //if (this.actors[key].ghost)
+            this.actors[key].update();
         }
     };
+
+    updateActorTargetPositions() {
+        for (var b = this.playerCount; b < this.playerCount + 4; b++)
+            this.actors[b].updateTargetPos()
+    };
+
     // 游戏逻辑更新主函数
     update() {
         if (this.gameplayMode == 13) {
-
+            // for (b = 0; b < g.tickMultiplier + c; b++) {
+            //     g.advanceCutscene();
+            //     g.intervalTime = (g.intervalTime + 1) % D;
+            //     g.globalTime++
+            // }
+            // g.checkCutscene();
+            // g.blinkScoreLabels()
         }
         else {
             this.moveActors();
-
+            if (this.gameplayMode == 0) {
+                if (this.tilesChanged) {
+                    //g.detectCollisions();
+                    this.updateActorTargetPositions()
+                }
+            }
         }
         this.handleTimers();
     }
@@ -312,28 +382,13 @@ export default class Main {
         }
     }
 
-    prepareAllowedDirections() {
-        for (var b = 8; b < this.playfieldHeight * 8; b += 8) {
-            for (var c = 8; c < this.playfieldWidth * 8; c += 8) {
-                this.playfield[b][c].allowedDir = 0;
-                if (this.playfield[b - 8][c].path)//上
-                    this.playfield[b][c].allowedDir += 1;
-                if (this.playfield[b + 8][c].path)//下
-                    this.playfield[b][c].allowedDir += 2;
-                if (this.playfield[b][c - 8].path)//左
-                    this.playfield[b][c].allowedDir += 4;
-                if (this.playfield[b][c + 8].path)//右
-                    this.playfield[b][c].allowedDir += 8
-            }
-        }
-    };
+
 
     ////////////////////////////////////////////////////////////////////////////////////////
 
 
 
     ///////////////////////////////////////////////////////////////////////////////////
-
     resetPlayfield() {
         this.dotsRemaining = 0;
         this.dotsEaten = 0;
@@ -361,11 +416,6 @@ export default class Main {
         }
     }
 
-    restartActors() {
-        for (let key in this.actors) {
-            this.actors[key].resetActor();
-        }
-    }
 
     switchMainGhostMode = function (actorMode, c) {
         if (actorMode == 4 && this.levels.frightTime == 0) {
@@ -387,12 +437,12 @@ export default class Main {
                     this.currentPlayerSpeed = this.levels.playerSpeed * 0.8;
                     this.currentDotEatingSpeed = this.levels.dotEatingSpeed * 0.8;
                     break;
-                // case 4:
-                //     g.currentPlayerSpeed = g.levels.playerFrightSpeed * 0.8;
-                //     g.currentDotEatingSpeed = g.levels.dotEatingFrightSpeed * 0.8;
-                //     g.frightModeTime = g.levels.frightTotalTime;
-                //     g.modeScoreMultiplier = 1;
-                //     break
+                case 4:
+                    this.currentPlayerSpeed = this.levels.playerFrightSpeed * 0.8;
+                    this.currentDotEatingSpeed = this.levels.dotEatingFrightSpeed * 0.8;
+                    this.frightModeTime = this.levels.frightTotalTime;
+                    this.modeScoreMultiplier = 1;
+                    break
             }
             for (let k in this.actors) {
                 actor = this.actors[k];
@@ -407,19 +457,26 @@ export default class Main {
                         actor.changeActorMode(actorMode)
                     }
                 } else {
-                    // actor.fullSpeed = g.currentPlayerSpeed;
-                    // actor.dotEatingSpeed = g.currentDotEatingSpeed;
-                    // actor.tunnelSpeed = g.currentPlayerSpeed;
-                    // actor.d()
+                    actor.fullSpeed = this.currentPlayerSpeed;
+                    actor.dotEatingSpeed = this.currentDotEatingSpeed;
+                    actor.tunnelSpeed = this.currentPlayerSpeed;
+                    actor.updateSpeed()
                 }
             }
         }
     }
 
 
-    getDistance(b, c) {
-        return Math.sqrt((c[1] - b[1]) * (c[1] - b[1]) + (c[0] - b[0]) * (c[0] - b[0]))
+    newLife() {
+        this.lostLifeOnThisLevel = true;
+        this.alternatePenLeavingScheme = true;
+        this.alternateDotCount = 0;
+        this.lives--;
+        //this.updateChromeLives();
+        this.lives == -1 ? this.changeGameplayMode(8) : this.restartGameplay(false)
     };
+
+
 
     getSpeedIntervals(speed) {
         if (!this.speedIntervals[speed]) {
@@ -490,7 +547,15 @@ export default class Main {
     handleGameplayModeTimer() {
         if (this.gameplayModeTime) {
             this.gameplayModeTime--;
-
+            // switch (this.gameplayMode) {
+            //     case 2:
+            //     case 3:
+            //         for (var b = 0; b < this.playerCount + 4; b++) 
+            //             this.actors[b].b();
+            //         break;
+            //     case 10:
+            //         Math.floor(this.gameplayModeTime / (this.timing[11] / 8)) % 2 == 0 ? g.changeElementBkPos(g.playfieldEl, 322, 2, e) : g.changeElementBkPos(g.playfieldEl, 322, 138, e)
+            // }
             if (this.gameplayModeTime <= 0) {
                 this.gameplayModeTime = 0;
                 switch (this.gameplayMode) {
@@ -524,11 +589,11 @@ export default class Main {
                         this.showReady = false;
                         this.changeGameplayMode(0);
                         break;
-                    // case 8:
-                    //     b = document.getElementById("pcm-go");
-                    //     google.dom.remove(b);
-                    //     google.pacManQuery && google.pacManQuery();
-                    //     break;
+                    case 8://GAME OVER
+                        // b = document.getElementById("pcm-go");
+                        // google.dom.remove(b);
+                        // google.pacManQuery && google.pacManQuery();
+                        break;
                     // case 9:
                     //     g.changeGameplayMode(10);
                     //     break;
@@ -604,6 +669,68 @@ export default class Main {
     };
 
 
+    dotEaten(b, c) {
+        this.dotsRemaining--;
+        this.dotsEaten++;
+        this.actors[b].updateSpeed(1);
+        //g.playDotEatingSound(b);
+        if (this.playfield[c[0]][c[1]].dot == 2) {
+            this.switchMainGhostMode(4, e);
+            this.addToScore(50, b)
+        } else this.addToScore(10, b);
+        this.playfield[c[0]][c[1]].dot = 0;
+        this.updateCruiseElroySpeed();
+        this.resetForcePenLeaveTime();
+        this.figureOutPenLeaving();
+        if (this.dotsEaten == 70 || this.dotsEaten == 170) this.showFruit();
+        this.dotsRemaining == 0 && this.finishLevel();
+        //g.playAmbientSound()
+    };
+
+    addToScore(b, c) {
+        this.score[c] += b;
+        !this.extraLifeAwarded[c] && this.score[c] > 1E4 && this.extraLife(c);
+        //g.updateChromeScore(c)
+    };
+    extraLife = function (b) {
+        //this.playSound("extra-life", 0);
+        this.extraLifeAwarded[b] = a;
+        this.lives++;
+        if (this.lives > 5) this.lives = 5;
+        //this.updateChromeLives()
+    };
+    figureOutPenLeaving() {
+        if (this.alternatePenLeavingScheme) {
+            this.alternateDotCount++;
+            switch (this.alternateDotCount) {
+                case dotCount[1]:
+                    this.actors[g.playerCount + 1].freeToLeavePen = true;
+                    break;
+                case dotCount[2]:
+                    this.actors[g.playerCount + 2].freeToLeavePen = true;
+                    break;
+                case dotCount[3]:
+                    if (this.actors[this.playerCount + 3].mode == 16)
+                        this.alternatePenLeavingScheme = false;
+                    break
+            }
+        } else if (this.actors[this.playerCount + 1].mode == 16 || this.actors[this.playerCount + 1].mode == 8) {
+            this.actors[this.playerCount + 1].dotCount++;
+            if (this.actors[this.playerCount + 1].dotCount >= this.levels.penLeavingLimits[1])
+                this.actors[this.playerCount + 1].freeToLeavePen = true
+        } else if (this.actors[this.playerCount + 2].mode == 16 || this.actors[this.playerCount + 2].mode == 8) {
+            this.actors[this.playerCount + 2].dotCount++;
+            if (this.actors[this.playerCount + 2].dotCount >= this.levels.penLeavingLimits[2])
+                this.actors[this.playerCount + 2].freeToLeavePen = true
+        } else if (this.actors[this.playerCount + 3].mode == 16 || this.actors[this.playerCount + 3].mode == 8) {
+            this.actors[this.playerCount + 3].dotCount++;
+            if (this.actors[this.playerCount + 3].dotCount >= this.levels.penLeavingLimits[3])
+                this.actors[this.playerCount + 3].freeToLeavePen = true
+        }
+    };
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     rand() {
         var b = 4294967296,
             c = 134775813;
@@ -613,4 +740,125 @@ export default class Main {
     seed(b) {
         this.randSeed = b
     };
+
+    getDistance(b, c) {
+        return Math.sqrt((c[1] - b[1]) * (c[1] - b[1]) + (c[0] - b[0]) * (c[0] - b[0]))
+    };
+
+    getPlayfieldX = function (x) {
+        return x + 0//-32
+    };
+    getPlayfieldY = function (y) {
+        return y + 0
+    };
+
+    prepareAllowedDirections() {
+        for (var b = 8; b < this.playfieldHeight * 8; b += 8) {
+            for (var c = 8; c < this.playfieldWidth * 8; c += 8) {
+                this.playfield[b][c].allowedDir = 0;
+                if (this.playfield[b - 8][c].path)//上
+                    this.playfield[b][c].allowedDir += 1;
+                if (this.playfield[b + 8][c].path)//下
+                    this.playfield[b][c].allowedDir += 2;
+                if (this.playfield[b][c - 8].path)//左
+                    this.playfield[b][c].allowedDir += 4;
+                if (this.playfield[b][c + 8].path)//右
+                    this.playfield[b][c].allowedDir += 8
+            }
+        }
+        this.playfield[14 * 8][0].allowedDir = 12;
+        this.playfield[14 * 8][27 * 8].allowedDir = 12;
+
+        this.playfield[14 * 8][-8] = this.playfield[14 * 8][-16] =  {
+            path: 0,
+            dot: 0,
+            intersection: 0,
+            allowedDir: 12
+        };
+        this.playfield[14 * 8][28 * 8] = this.playfield[14 * 8][29 * 8] = {
+            path: 0,
+            dot: 0,
+            intersection: 0,
+            allowedDir: 12
+        };
+    };
+
+
+    restartActors() {
+        for (let key in this.actors) {
+            this.actors[key].resetActor();
+        }
+    }
+
+
+    updateCruiseElroySpeed = function () {
+        var b = this.levels.ghostSpeed * 0.8;
+        if (!this.lostLifeOnThisLevel || this.actors[this.playerCount + 3].mode != 16) {
+            var c = this.levels;
+            if (this.dotsRemaining < c.elroyDotsLeftPart2)
+                b = c.elroySpeedPart2 * 0.8;
+            else if (this.dotsRemaining < c.elroyDotsLeftPart1)
+                b = c.elroySpeedPart1 * 0.8
+        }
+        if (b != this.cruiseElroySpeed) {
+            this.cruiseElroySpeed = b;
+            this.actors[this.playerCount].updateSpeed()
+        }
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
