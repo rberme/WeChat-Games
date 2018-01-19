@@ -66,7 +66,7 @@ export default class Main {
 
         //g.updateCruiseElroySpeed();
         //g.hideFruit();
-        //g.resetForcePenLeaveTime();
+        this.resetForcePenLeaveTime();
         this.restartActors();
         //g.updateActorPositions();
         this.switchMainGhostMode(actorMode.RESET, true);
@@ -119,6 +119,9 @@ export default class Main {
                 //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
             }
         }
+
+        if (this.showReady)
+            gameRes.renderImage(4,114,189,1,1)
     }
 
     moveActors = function () {
@@ -487,13 +490,74 @@ export default class Main {
     handleGameplayModeTimer() {
         if (this.gameplayModeTime) {
             this.gameplayModeTime--;
+
+            if (this.gameplayModeTime <= 0) {
+                this.gameplayModeTime = 0;
+                switch (this.gameplayMode) {
+                    // case 1:
+                    //     g.changeGameplayMode(0);
+                    //     g.ghostEyesCount++;
+                    //     g.playAmbientSound();
+                    //     g.actors[g.ghostBeingEatenId].el.className = "pcm-ac";
+                    //     g.actors[g.ghostBeingEatenId].changeActorMode(8);
+                    //     var c = e;
+                    //     for (b = g.playerCount; b < g.playerCount + 4; b++) if (g.actors[b].mode == 4 || (g.actors[b].mode == 16 || g.actors[b].mode == 128) && !g.actors[b].eatenInThisFrightMode) {
+                    //         c = a;
+                    //         break
+                    //     }
+                    //     c || g.finishFrightMode();
+                    //     break;
+                    // case 2:
+                    //     g.changeGameplayMode(3);
+                    //     break;
+                    // case 3:
+                    //     g.newLife();
+                    //     break;
+                    case gameMode.READY://4:
+                        this.changeGameplayMode(5);
+                        break;
+                    // case 6:
+                    //     g.changeGameplayMode(7);
+                    //     break;
+                    // case 7:
+                    case gameMode.DEDUCTLIVE://5
+                        this.showReady = false;
+                        this.changeGameplayMode(0);
+                        break;
+                    // case 8:
+                    //     b = document.getElementById("pcm-go");
+                    //     google.dom.remove(b);
+                    //     google.pacManQuery && google.pacManQuery();
+                    //     break;
+                    // case 9:
+                    //     g.changeGameplayMode(10);
+                    //     break;
+                    // case 10:
+                    //     g.changeGameplayMode(11);
+                    //     break;
+                    // case 11:
+                    //     if (g.levels.cutsceneId) {
+                    //         g.cutsceneId = g.levels.cutsceneId;
+                    //         g.changeGameplayMode(13)
+                    //     } else {
+                    //         g.canvasEl.style.visibility = "";
+                    //         g.newLevel(e)
+                    //     }
+                    //     break;
+                    // case 12:
+                    //     g.playfieldEl.style.visibility = "";
+                    //     g.canvasEl.style.visibility = "";
+                    //     g.switchToDoubleMode();
+                    //     break
+                }
+            }
         }
     }
     handleTimers() {
         if (this.gameplayMode == 0) {
             this.handleForcePenLeaveTimer();
             // this.handleFruitTimer();
-            // this.handleGhostModeTimer()
+            this.handleGhostModeTimer()
         }
         this.handleGameplayModeTimer()
     };
@@ -503,6 +567,22 @@ export default class Main {
         switch (_mode) {
             case 0://游戏开始
                 //g.playAmbientSound();
+                break;
+            case gameMode.READY://4://显示READY!倒计时等待游戏开始
+                //g.doorEl.style.display = "block";
+                // b = document.createElement("div");
+                // b.id = "pcm-re";
+                //g.prepareElement(b, 160, 0);
+                // g.playfieldEl.appendChild(b);//READY!的字样
+                this.showReady = true;
+                this.gameplayModeTime = this.timing[7];
+                // g.stopAllAudio();
+                // g.playSound("start-music", 0, true);
+                break;
+            case gameMode.DEDUCTLIVE://5://减少生命,再倒计时
+                this.lives--;
+                //g.updateChromeLives();
+                this.gameplayModeTime = this.timing[8];
                 break;
         }
     }

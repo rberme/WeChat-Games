@@ -24,18 +24,18 @@ export default class Actor {
 
     update() {
         if (this.mainRef.gameplayMode == 0 ||
-          this.ghost && this.mainRef.gameplayMode == 1 && (this.mode == 8 || this.mode == 64)) {
-        if (this.requestedDir != 0) {//玩家请求的方向
-            this.z(this.requestedDir);
-            this.requestedDir = 0
-        }
-        if (this.followingRoutine) {
-            this.j();
-            this.mode == 64 && this.j()
-        } else {
-            this.e();
-            this.mode == 8 && this.e()
-        }
+            this.ghost && this.mainRef.gameplayMode == 1 && (this.mode == 8 || this.mode == 64)) {
+            // if (this.requestedDir != 0) {//玩家请求的方向
+            //     this.applyRequestDir(this.requestedDir);
+            //     this.requestedDir = 0
+            // }
+            if (this.followingRoutine) {
+                this.j();
+                this.mode == 64 && this.j()
+            } else {
+                this.e();
+                this.mode == 8 && this.e()
+            }
         }
     }
 
@@ -56,6 +56,53 @@ export default class Actor {
 
 
     ///////////////////////////////////////////////////////////
+
+    applyRequestDir(b) {
+        // if (!g.userDisabledSound) {
+        //     google.pacManSound = true;
+        //     g.updateSoundIcon()
+        // }
+        //如果玩家请求的方向与当前方向相反
+        if (this.dir == oppositeDirections[b]) {
+            this.dir = b;
+            this.posDelta = [0, 0];
+            this.currentSpeed != 2 && this.updateSpeed(0);
+            if (this.dir != 0) this.lastActiveDir = this.dir;
+            this.nextDir = 0
+        } else if (this.dir != b) {
+            if (this.dir == 0) {
+                if (this.mainRef.playfield[this.pos[0]][this.pos[1]].allowedDir & b)
+                    this.dir = b
+            }
+        } else {
+            var c = this.mainRef.playfield[this.tilePos[0]][this.tilePos[1]];
+            if (c && c.allowedDir & b) {
+                c = axisIncrement[this.dir];
+                var d = [this.pos[0], this.pos[1]];
+                d[c.axis] -= c.increment;
+                var f = 0;
+                if (d[0] == this.tilePos[0] && d[1] == this.tilePos[1])
+                    f = 1;
+                else {
+                    d[c.axis] -= c.increment;
+                    if (d[0] == this.tilePos[0] && d[1] == this.tilePos[1])
+                        f = 2
+                }
+                if (f) {
+                    this.dir = b;
+                    this.pos[0] = this.tilePos[0];
+                    this.pos[1] = this.tilePos[1];
+                    c = axisIncrement[this.dir];
+                    this.pos[c.axis] += c.increment * f;
+                    return
+                }
+            }
+            this.nextDir = b;
+            this.posDelta = [0, 0]
+        }
+    };
+
+
     j() {
         if (this.routineMoveId == -1 || this.proceedToNextRoutineMove)
             this.v();
@@ -72,7 +119,8 @@ export default class Actor {
                 this.pos = [penExit[0], penExit[1] + 4];
                 this.dir = this.modeChangedWhileInPen ? 8 : 4;
                 var m = this.mainRef.mainGhostMode;
-                if (this.mode == 128 && m == 4) m = this.mainRef.lastMainGhostMode;
+                if (this.mode == 128 && m == 4)
+                    m = this.mainRef.lastMainGhostMode;
                 this.changeActorMode(m);
                 return
             } else if (this.mode == 64) {
@@ -172,11 +220,11 @@ export default class Actor {
             b = [Math.floor(b) * 8, Math.floor(c) * 8];
             this.pos[1] == b[1] && this.pos[0] == b[0] && this.applyNextDir()
         }
-        // this.ghost==false &&
-        //     this.nextDir &&
-        //     g.playfield[d[0]][d[1]].intersection &&
-        //     this.nextDir & g.playfield[d[0]][d[1]].allowedDir &&
-        //     this.t()
+        this.ghost == false &&
+            this.nextDir &&
+            this.mainRef.playfield[d[0]][d[1]].intersection &&
+            this.nextDir & this.mainRef.playfield[d[0]][d[1]].allowedDir &&
+            this.t()
     };
 
     updateTilePos(b) {
@@ -187,15 +235,15 @@ export default class Actor {
             this.reverseDirectionsNext = false;
             this.updateNextDir(true)
         }
-        // if (this.ghost == false && mainRef.playfield[b[0]][b[1]].path == false) {
-        //     this.pos[0] = this.lastGoodTilePos[0];
-        //     this.pos[1] = this.lastGoodTilePos[1];
-        //     b[0] = this.lastGoodTilePos[0];
-        //     b[1] = this.lastGoodTilePos[1];
-        //     this.dir = 0
-        // }
-        // else
-        this.lastGoodTilePos = [b[0], b[1]];
+        if (this.ghost == false && mainRef.playfield[b[0]][b[1]].path == false) {
+            this.pos[0] = this.lastGoodTilePos[0];
+            this.pos[1] = this.lastGoodTilePos[1];
+            b[0] = this.lastGoodTilePos[0];
+            b[1] = this.lastGoodTilePos[1];
+            this.dir = 0
+        }
+        else
+            this.lastGoodTilePos = [b[0], b[1]];
 
         this.mainRef.playfield[b[0]][b[1]].type == 1 &&
             this.mode != 8 ? this.updateSpeed(2) : this.updateSpeed(0);
@@ -259,7 +307,7 @@ export default class Actor {
         let oldMode = this.mode;
         this.mode = newMode;
         switch (oldMode) {
-            case 32:
+            case actorMode.EXITINGPEN://32:
                 this.mainRef.ghostExitingPenNow = false;
                 break;
             // case 8:
@@ -269,6 +317,11 @@ export default class Actor {
         }
 
         switch (newMode) {
+            case 0b00000001:
+                this.fullSpeed = this.mainRef.levels.ghostSpeed * 0.8;
+                this.tunnelSpeed = this.mainRef.levels.ghostTunnelSpeed * 0.8;
+                this.followingRoutine = false;
+                break;
             case actorMode.RESET://回到固定目标点上
                 this.targetPos = this.scatterPos;
                 this.fullSpeed = this.mainRef.levels.ghostSpeed * 0.8;
@@ -300,13 +353,13 @@ export default class Actor {
                 this.followingRoutine = true;
                 this.routineMoveId = -1;
                 switch (this.id) {
-                    case g.playerCount + 1:
+                    case this.mainRef.playerCount + 1:
                         this.routineToFollow = 5;
                         break;
-                    case g.playerCount + 2:
+                    case this.mainRef.playerCount + 2:
                         this.routineToFollow = 4;
                         break;
-                    case g.playerCount + 3:
+                    case this.mainRef.playerCount + 3:
                         this.routineToFollow = 6;
                         break
                 }
@@ -323,7 +376,7 @@ export default class Actor {
             this.targetPlayerId = 0//Math.floor(g.rand() * g.playerCount)
     };
 
-    updateSpeed(_speed) {
+    updateSpeed(_speed) {//c
         if (_speed)
             this.currentSpeed = _speed;
         switch (this.currentSpeed) {

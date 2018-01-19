@@ -5,6 +5,7 @@ const altasRect = {
     1: [480, 0, 224, 248],       //背景框白色
     2: [2, 192, 8, 8],//小点
     3: [2, 1, 16, 16],//pacman往左
+    4:[200,0,52,12],//READY!
 }
 const y = 0.8 * 0.4
 export const penRoutinePos = {//在围栏中来回移动的参考点
@@ -75,7 +76,7 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         x: 11.6,
         y: 14,
         dir: 8,
-        dest: 12.5,
+        dest: 13.5,
         speed: y
     },
     {
@@ -96,7 +97,7 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         x: 15.4,
         y: 14,
         dir: 4,
-        dest: 12.5,
+        dest: 13.5,
         speed: y
     },
     {
@@ -117,7 +118,7 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         x: 13.5,
         y: 14,
         dir: 4,
-        dest: 10.625,
+        dest: 11.625,
         speed: 1.6
     }],
     8: [{
@@ -138,14 +139,14 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         x: 13.5,
         y: 14,
         dir: 8,
-        dest: 14.375,
+        dest: 15.375,
         speed: 1.6
     }],
     10: [{
         x: 11.6,
         y: 14,
         dir: 8,
-        dest: 12.5,
+        dest: 13.5,
         speed: y
     },
     {
@@ -166,7 +167,7 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         x: 15.4,
         y: 14,
         dir: 4,
-        dest: 12.5,
+        dest: 13.5,
         speed: y
     },
     {
@@ -238,8 +239,8 @@ export const actorInitial = [//怪物的初始位置，方向，散开点
 ]//一个玩家时
 //...
 
-export const penExit = [112,88];//围栏的出口
-export const fruitPos = [112, 136];//水果的位置
+export const penExit = [88,104];//围栏的出口
+export const fruitPos = [136,104];//水果的位置
 export const tunneLadit = [//隧道口
     {
         x: 0,
@@ -551,7 +552,8 @@ export const actorMode = {
 }
 
 export const gameMode = {
-
+    READY:4,
+    DEDUCTLIVE:5,
 }
 
 export const levelConfig = [{},//关卡配置数据
