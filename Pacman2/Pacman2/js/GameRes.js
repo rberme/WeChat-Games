@@ -5,7 +5,7 @@ const altasRect = {
     1: [480, 0, 224, 248],       //背景框白色
     2: [2, 192, 8, 8],//小点
     3: [2, 1, 16, 16],//pacman往左
-    4:[200,0,52,12],//READY!
+    4: [200, 0, 52, 12],//READY!
 }
 const y = 0.8 * 0.4
 export const penRoutinePos = {//在围栏中来回移动的参考点
@@ -178,9 +178,9 @@ export const penRoutinePos = {//在围栏中来回移动的参考点
         speed: y
     }]
 }
-export const dotCount = [0, 7, 17, 32];
-export const allDirection = [1, 4, 2, 8];//左,上,右,下
-export const axisIncrement = {
+export const PEN_LEAVING_FOOD_LIMITS = [0, 7, 17, 32];
+export const allDirection = [1, 4, 2, 8];//上,左,下,右
+export const PM_MOVEMENTS = {
     0: {
         axis: 0,
         increment: 0
@@ -240,8 +240,8 @@ export const actorInitial = [//怪物的初始位置，方向，散开点
 ]//一个玩家时
 //...
 
-export const penExit = [88,104];//围栏的出口
-export const fruitPos = [136,104];//水果的位置
+export const penExit = [88, 104];//围栏的出口
+export const fruitPos = [136, 104];//水果的位置
 export const tunneLadit = [//隧道口
     {
         x: -1,
@@ -546,16 +546,51 @@ export const noDotPaths = [
     },
 ]
 
-export const actorMode = {
-    RESET: 0b00000010,
-    WAIT: 0b00010000,
-    EXITINGPEN: 0b00100000,
+export const Energizer = [
+    {
+        x: 1,
+        y: 3
+    },
+    {
+        x: 1,
+        y: 23
+    },
+    {
+        x: 26,
+        y: 3
+    },
+    {
+        x: 26,
+        y: 23
+    }]
+
+export const ACTORMODE = {
+    NONE: 0,
+    CHASE: 1,
+    SCATTER: 0b00000010,
+    FRIGHTENED: 0b00000100,//4
+    EATEN: 8,
+    IN_PEN: 16,
+    LEAVING_PEN: 0b00100000,//32
+    ENTERING_PEN: 64,
+    RE_LEAVING_FROM_PEN: 128,
 }
 
-export const gameMode = {
-    READY:4,
-    DEDUCTLIVE:5,
-    GAMEOVER:8,
+export const GAMEMODE = {
+    ORDINARY_PLAYING: 0,
+    GHOST_DIED: 1,
+    PLAYER_DYING: 2,
+    PLAYER_DIED: 3,
+    NEWGAME_STARTING: 4,
+    NEWGAME_STARTED: 5,
+    GAME_RESTARTING: 6,
+    GAME_RESTARTED: 7,
+    GAMEOVER: 8,
+    LEVEL_BEING_COMPLETED: 9,
+    LEVEL_COMPLETED: 10,
+    TRANSITION_INTO_NEXT_SCENE: 11,
+    CUTSCENE: 13,
+    KILL_SCREEN: 14,
 }
 
 export const levelConfig = [
