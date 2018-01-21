@@ -182,7 +182,7 @@ export default class Main {
         if (this.showReady)
             gameRes.renderImage(4, 114, 189, 1, 1)
 
-        gameRes.renderImage(100, 112, this.playfieldY+32*8);//, canvas.height - 100, 1, 1);
+        gameRes.renderImage(100, 112, this.playfieldY+32*8+32,1,1);//, canvas.height - 100, 1, 1);
     }
 
 
