@@ -2,7 +2,7 @@ import GameRes from './GameRes'
 import Actor from './Actor'
 
 
-import { allPaths, noDotPaths, GAMEMODE, levelConfig, ACTORMODE, times, PEN_LEAVING_FOOD_LIMITS, Energizer } from './GameRes'
+import { fruitPos, allPaths, noDotPaths, GAMEMODE, levelConfig, ACTORMODE, times, PEN_LEAVING_FOOD_LIMITS, Energizer } from './GameRes'
 
 const FPS_OPTIONS = [90, 45, 30];
 const DEFAULT_FPS = FPS_OPTIONS[0];
@@ -54,6 +54,7 @@ export default class Main {
     }
 
     newGame() {
+        this.frame = 0;
         this.playerCount = 1;
         this.createActors();
         this.startGameplay();
@@ -101,7 +102,7 @@ export default class Main {
         this.tilesChanged = false;
 
         this.updateCruiseElroySpeed();
-        //g.hideFruit();
+        this.hideFruit();
         this.resetForcePenLeaveTime();
         this.restartActors();
         //g.updateActorPositions();
@@ -167,9 +168,12 @@ export default class Main {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         this.renderPlayfield(gameRes);
+        if (this.fruitShown) {
+            gameRes.renderImage(46, fruitPos[1], fruitPos[0] + this.playfieldY, 0, 0);
+        }
+
         for (let key in this.actors) {
-            if (this.actors[key].ghost == false)
-                this.actors[key].render(gameRes);
+            this.actors[key].render(gameRes);
             // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
             //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
 
@@ -177,6 +181,8 @@ export default class Main {
 
         if (this.showReady)
             gameRes.renderImage(4, 114, 189, 1, 1)
+
+        gameRes.renderImage(100, 112, this.playfieldY+32*8);//, canvas.height - 100, 1, 1);
     }
 
 
@@ -246,8 +252,10 @@ export default class Main {
         for (let y in this.playfield) {
             let fieldy = this.playfield[y];
             for (let x in fieldy) {
-                if (fieldy[x].dot > 0) {
+                if (fieldy[x].dot == 1) {
                     gameRes.renderImage(2, Number(x) + this.playfieldX, Number(y) + this.playfieldY)
+                } else if (fieldy[x].dot == 2) {
+                    gameRes.renderImage(11, Number(x) + this.playfieldX, Number(y) + this.playfieldY)
                 }
             }
         }
@@ -352,6 +360,11 @@ export default class Main {
                     this.dotsRemaining--
                 }
             }
+        }
+
+        for (var k in Energizer) {
+            var c = Energizer[k];
+            this.playfield[c.y * 8][c.x * 8].dot = 2
         }
     }
 
@@ -469,14 +482,14 @@ export default class Main {
         this.playfield[14 * 8][0].allowedDir = 12;
         this.playfield[14 * 8][27 * 8].allowedDir = 12;
 
-        this.playfield[14 * 8][-8] = this.playfield[14 * 8][-16] = {
-            path: 0,
+        this.playfield[14 * 8][-8] = this.playfield[14 * 8][-16] = this.playfield[14 * 8][-24] = {
+            path: 1,
             dot: 0,
             intersection: 0,
             allowedDir: 12
         };
-        this.playfield[14 * 8][28 * 8] = this.playfield[14 * 8][29 * 8] = {
-            path: 0,
+        this.playfield[14 * 8][28 * 8] = this.playfield[14 * 8][29 * 8] = this.playfield[14 * 8][30 * 8] = {
+            path: 1,
             dot: 0,
             intersection: 0,
             allowedDir: 12
@@ -889,8 +902,13 @@ export default class Main {
                 this.hideFruit()
         }
     };
-
-
+    hideFruit() {
+        this.fruitShown = false;
+    };
+    showFruit() {
+        this.fruitShown = true;
+        this.fruitTime = this.timing[15] + (this.timing[16] - this.timing[15]) * this.rand()
+    };
 
     handleGhostModeTimer = function () {
         if (this.frightModeTime) {
@@ -957,7 +975,7 @@ export default class Main {
         !this.extraLifeAwarded[c] && this.score[c] > 1E4 && this.extraLife(c);
         //g.updateChromeScore(c)
     };
-    clearDotEatingNow () {
+    clearDotEatingNow() {
         this.dotEatingNow = [false, false];
         this.dotEatingNext = [false, false]
     };
@@ -999,7 +1017,7 @@ export default class Main {
         // }
     };
 
-    repeatDotEatingSound  (b) {
+    repeatDotEatingSound(b) {
         // g.dotEatingNow[b] = e;
         // if (g.dotEatingNext[b]) {
         //     g.dotEatingNext[b] = e;
@@ -1071,6 +1089,7 @@ export default class Main {
             // g.blinkScoreLabels()
         }
         else {
+            this.frame++;
             this.moveActors();
             if (this.gameplayMode == 0) {
                 if (this.tilesChanged) {

@@ -23,9 +23,26 @@ const PM_DIR_LEFT = 4;
 const PM_DIR_RIGHT = 8;
 
 
+const pacmanAnim = [
+    9, 10, 9, 6,//pacman上
+    12, 13, 12, 6,//pacman下
+    3, 5, 3, 6,//pacman左
+    7, 8, 7, 6,//pacman右
 
+    14, 15, 16, 17, 18, 19, 20, 21,//red上下左右
+    22, 23, 24, 25, 26, 27, 28, 29,//pink
+    30, 31, 32, 33, 34, 35, 36, 37,//blue
+    38, 39, 40, 41, 42, 43, 44, 45,//yellow
 
+    50, 51, 52, 53,//受惊
+];
 
+const Dir2Anim = {
+    1: 0,
+    2: 1,
+    4: 2,
+    8: 3,
+}
 
 
 
@@ -43,7 +60,29 @@ export default class Actor {
 
 
     render(gameRes) {
-        gameRes.renderImage(3, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+        if (this.dir) {
+            if (this.ghost == false) {
+                this.idx = Math.floor(this.mainRef.frame / 3) % 4;
+                this.idx += Dir2Anim[this.dir] * 4;
+            } else {
+                if (this.mainRef.frightModeTime) {
+                    this.idx = 48 + Math.floor(this.mainRef.frame / 3) % 2;
+                    if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
+                        this.idx += Math.floor(this.mainRef.frame / 12) % 2 * 2;
+                } else {
+                    if (this.id == this.mainRef.playerCount) {
+                        this.idx = 16 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    } else if (this.id == this.mainRef.playerCount + 1) {
+                        this.idx = 24 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    } else if (this.id == this.mainRef.playerCount + 2) {
+                        this.idx = 32 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    } else if (this.id == this.mainRef.playerCount + 3) {
+                        this.idx = 40 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    }
+                }
+            }
+        }
+        gameRes.renderImage(pacmanAnim[this.idx], this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
     }
 
 
@@ -293,7 +332,7 @@ export default class Actor {
                     else {
                         let randDir;
                         do randDir = allDirection[Math.floor(this.mainRef.rand() * 4)];
-                        while ((randDir & h.allowedDir) == 0 || randDir == oppositeDirections[this.dir]);
+                        while ((randDir & field.allowedDir) == 0 || randDir == oppositeDirections[this.dir]);
                         this.nextDir = randDir
                     }
                     break
