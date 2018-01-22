@@ -38,9 +38,10 @@ let PlatformDifference = {
  */
 export default class Main {
     constructor() {
-        this.platform = "devtools";
+        this.platform = "devtools";//"ios"//
         this.touchHandler = this.touchEventHandler.bind(this)
-        //wx.onTouchMove(this.touchHandler);
+        this.gameplayMode = GAMEMODE.KILL_SCREEN;
+
         wx.onTouchStart(this.touchHandler);
         wx.onTouchEnd(this.touchHandler);
         wx.onTouchCancel(this.touchHandler);
@@ -48,9 +49,12 @@ export default class Main {
         this.playfieldX = 0;
         this.playfieldY = 48;
 
-        //this.restartGameplay()
         this.debugFrame = 0;
         this.restart();
+    }
+
+    killScreen(is256) {
+
     }
 
     newGame() {
@@ -70,7 +74,7 @@ export default class Main {
         this.newLevel(true);
     }
 
-    newLevel(b) {
+    newLevel(newStart) {
         this.level++;
         this.levels = this.level >= levelConfig.length ? levelConfig[levelConfig.length - 1] : levelConfig[this.level];
         // start issue 14: Ghosts stay blue permanently on restart
@@ -83,13 +87,13 @@ export default class Main {
         this.alternatePenLeavingScheme = false;
         this.lostLifeOnThisLevel = false;
         this.resetPlayfield();
-        this.restartGameplay(b);
+        this.restartGameplay(newStart);
         //g.level == 256 && g.killScreen()
     }
 
 
 
-    restartGameplay(b) {
+    restartGameplay(newStart) {
         this.seed(0);
         this.frightModeTime = 0;
         this.intervalTime = 0;
@@ -112,7 +116,7 @@ export default class Main {
         //g.dotEatingChannel = [0, 0];
         //g.dotEatingSoundPart = [1, 1];
         //g.clearDotEatingNow();
-        b ? this.changeGameplayMode(4) : this.changeGameplayMode(6)
+        newStart ? this.changeGameplayMode(GAMEMODE.NEWGAME_STARTING) : this.changeGameplayMode(GAMEMODE.GAME_RESTARTING)
 
     }
     restart() {
@@ -132,6 +136,12 @@ export default class Main {
             this.touchStartX = e.touches[0].clientX
             this.touchStartY = e.touches[0].clientY
         } else if (e.type == PlatformDifference[this.platform].touchend) {
+            if (this.gameplayMode == GAMEMODE.KILL_SCREEN) {
+                this.speedIntervals = [];
+                this.initializeTickTimer();
+                this.newGame();
+                return;
+            }
             let deltaX = e.changedTouches[0].clientX - this.touchStartX;
             let deltaY = e.changedTouches[0].clientY - this.touchStartY;
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -166,23 +176,28 @@ export default class Main {
      */
     render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
+        if (this.gameplayMode == GAMEMODE.TRANSITION_INTO_NEXT_SCENE)
+            return;
+        if (this.gameplayMode == null || this.gameplayMode == GAMEMODE.KILL_SCREEN) {
+            gameRes.renderImage(100, 112, this.playfieldY + 32 * 8 + 32, 1, 1);//, canvas.height - 100, 1, 1);
+        } else {//if (this.gameplayMode != GAMEMODE.KILL_SCREEN) {
+            this.renderPlayfield(gameRes);
+            if (this.fruitShown) {
+                gameRes.renderImage(46, fruitPos[1], fruitPos[0] + this.playfieldY, 0, 0);
+            }
 
-        this.renderPlayfield(gameRes);
-        if (this.fruitShown) {
-            gameRes.renderImage(46, fruitPos[1], fruitPos[0] + this.playfieldY, 0, 0);
+            if (this.gameplayMode == GAMEMODE.NEWGAME_STARTING) {
+                this.actors[0].render(gameRes);
+            }
+            else {
+                for (let key in this.actors) {
+                    this.actors[key].render(gameRes);
+                }
+            }
+
+            if (this.showReady)
+                gameRes.renderImage(4, 114, 189, 1, 1)
         }
-
-        for (let key in this.actors) {
-            this.actors[key].render(gameRes);
-            // ctx.strokeRect(this.actors[key].pos[1] * gameRes.renderRate, (this.actors[key].pos[0]+48) * gameRes.renderRate, 
-            //     16 * gameRes.renderRate, 16 * gameRes.renderRate);
-
-        }
-
-        if (this.showReady)
-            gameRes.renderImage(4, 114, 189, 1, 1)
-
-        gameRes.renderImage(100, 112, this.playfieldY+32*8+32,1,1);//, canvas.height - 100, 1, 1);
     }
 
 
@@ -193,22 +208,24 @@ export default class Main {
 
     // 实现游戏帧循环
     loop() {
+        this.frame++;
         this.debugFrame++;
         this.intervalTime = (this.intervalTime + 1) % DEFAULT_FPS;
-        if (this.debugFrame < 30) {
-            requestAnimationFrame(
-                this.loop.bind(this),
-                canvas
-            )
-            return;
-        }
-        if (this.debugFrame == 30) {
-            this.speedIntervals = [];
-            this.initializeTickTimer();
-            this.newGame();
-        }
+        // if (this.debugFrame < 30) {
+        //     requestAnimationFrame(
+        //         this.loop.bind(this),
+        //         canvas
+        //     )
+        //     return;
+        // }
+        // if (this.debugFrame == 30) {
+        //     this.speedIntervals = [];
+        //     this.initializeTickTimer();
+        //     this.newGame();
+        // }
 
         this.update()
+        if (this.frame % 2 == 0) this.update();
         this.render()
 
 
@@ -247,7 +264,12 @@ export default class Main {
     }
 
     renderPlayfield(gameRes) {
-        gameRes.renderImage(0, this.playfieldX, this.playfieldY);
+        if (this.gameplayMode == GAMEMODE.LEVEL_COMPLETED) {
+            gameRes.renderImage(Math.floor(this.frame/6) % 2 == 0 ? 0 : 1, this.playfieldX, this.playfieldY);
+        }
+        else {
+            gameRes.renderImage(0, this.playfieldX, this.playfieldY);
+        }
 
         for (let y in this.playfield) {
             let fieldy = this.playfield[y];
@@ -759,7 +781,7 @@ export default class Main {
                 //    b.id = "pcm-re";
                 //    g.prepareElement(b, 160, 0);
                 //    g.playfieldEl.appendChild(b);
-                g.gameplayModeTime = g.timing[6];
+                this.gameplayModeTime = this.timing[6];
                 break;
             case GAMEMODE.NEWGAME_STARTING://4://显示READY!倒计时等待游戏开始
                 //g.doorEl.style.display = "block";
@@ -802,7 +824,7 @@ export default class Main {
                 break;
             case 12:
                 // g.playfieldEl.style.visibility = "hidden";
-                g.gameplayModeTime = g.timing[13];
+                this.gameplayModeTime = this.timing[13];
                 break;
             case GAMEMODE.GHOST_DIED://1
                 this.gameplayModeTime = this.timing[2];
@@ -1089,7 +1111,6 @@ export default class Main {
             // g.blinkScoreLabels()
         }
         else {
-            this.frame++;
             this.moveActors();
             if (this.gameplayMode == 0) {
                 if (this.tilesChanged) {

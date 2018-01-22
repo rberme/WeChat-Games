@@ -9,7 +9,8 @@ import {
     penExit,
     oppositeDirections,
     penRoutinePos,
-    fruitPos
+    fruitPos,
+    GAMEMODE
 } from './GameRes'
 
 
@@ -60,24 +61,52 @@ export default class Actor {
 
 
     render(gameRes) {
-        if (this.dir) {
-            if (this.ghost == false) {
-                this.idx = Math.floor(this.mainRef.frame / 3) % 4;
-                this.idx += Dir2Anim[this.dir] * 4;
-            } else {
-                if (this.mainRef.frightModeTime) {
-                    this.idx = 48 + Math.floor(this.mainRef.frame / 3) % 2;
-                    if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
-                        this.idx += Math.floor(this.mainRef.frame / 12) % 2 * 2;
+        if (this.mainRef.gameplayMode == GAMEMODE.LEVEL_BEING_COMPLETED ||
+            this.mainRef.gameplayMode == GAMEMODE.LEVEL_COMPLETED ||
+            this.mainRef.gameplayMode == GAMEMODE.TRANSITION_INTO_NEXT_SCENE) {
+
+        } else {
+            if (this.dir) {
+                if (this.ghost == false) {
+                    if (this.mainRef.gameplayMode == GAMEMODE.NEWGAME_STARTED ||
+                        this.mainRef.gameplayMode == GAMEMODE.NEWGAME_STARTING ||
+                        this.mainRef.gameplayMode == GAMEMODE.GAME_RESTARTING ||
+                        this.mainRef.gameplayMode == GAMEMODE.GAME_RESTARTED) {
+                        this.idx = 3;
+                    } else {
+                        this.idx = Math.floor(this.mainRef.frame / 3) % 4;
+                        this.idx += Dir2Anim[this.dir] * 4;
+                    }
                 } else {
-                    if (this.id == this.mainRef.playerCount) {
-                        this.idx = 16 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
-                    } else if (this.id == this.mainRef.playerCount + 1) {
-                        this.idx = 24 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
-                    } else if (this.id == this.mainRef.playerCount + 2) {
-                        this.idx = 32 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
-                    } else if (this.id == this.mainRef.playerCount + 3) {
-                        this.idx = 40 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    if (this.mainRef.gameplayMode == GAMEMODE.NEWGAME_STARTED ||
+                        this.mainRef.gameplayMode == GAMEMODE.NEWGAME_STARTING ||
+                        this.mainRef.gameplayMode == GAMEMODE.GAME_RESTARTING ||
+                        this.mainRef.gameplayMode == GAMEMODE.GAME_RESTARTED) {
+                        if (this.id == this.mainRef.playerCount) {
+                            this.idx = 16 + Dir2Anim[this.dir] * 2;
+                        } else if (this.id == this.mainRef.playerCount + 1) {
+                            this.idx = 24 + Dir2Anim[this.dir] * 2;
+                        } else if (this.id == this.mainRef.playerCount + 2) {
+                            this.idx = 32 + Dir2Anim[this.dir] * 2;
+                        } else if (this.id == this.mainRef.playerCount + 3) {
+                            this.idx = 40 + Dir2Anim[this.dir] * 2;
+                        }
+                    } else {
+                        if (this.mainRef.frightModeTime) {
+                            this.idx = 48 + Math.floor(this.mainRef.frame / 3) % 2;
+                            if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
+                                this.idx += Math.floor(this.mainRef.frame / 12) % 2 * 2;
+                        } else {
+                            if (this.id == this.mainRef.playerCount) {
+                                this.idx = 16 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                            } else if (this.id == this.mainRef.playerCount + 1) {
+                                this.idx = 24 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                            } else if (this.id == this.mainRef.playerCount + 2) {
+                                this.idx = 32 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                            } else if (this.id == this.mainRef.playerCount + 3) {
+                                this.idx = 40 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                            }
+                        }
                     }
                 }
             }
