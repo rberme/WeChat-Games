@@ -977,7 +977,7 @@ google.pacman ||
                     speed: y
                 }]
             },
-            B = {//Í¼¼¯×ø±ê
+            B = {//cutscene
                 1: {
                     actors: [{
                         ghost: e,

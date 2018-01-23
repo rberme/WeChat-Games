@@ -2,7 +2,7 @@ import GameRes from './GameRes'
 import Actor from './Actor'
 
 
-import { fruitPos, allPaths, noDotPaths, GAMEMODE, levelConfig, ACTORMODE, times, PEN_LEAVING_FOOD_LIMITS, Energizer } from './GameRes'
+import { fruitPos, allPaths, noDotPaths, GAMEMODE, levelConfig, ACTORMODE, times, PEN_LEAVING_FOOD_LIMITS, Energizer, CUTSCENE, PM_MOVEMENTS } from './GameRes'
 
 const FPS_OPTIONS = [90, 45, 30];
 const DEFAULT_FPS = FPS_OPTIONS[0];
@@ -33,12 +33,23 @@ let PlatformDifference = {
     }
 }
 
+const fruitIdxes = [
+8,46,86,87,88,89,90,91,92,
+];
+
+const ghostScore = {
+    1:93,
+    2:94,
+    4:95,
+    8:96
+}
+
 /**
  * 游戏主函数
  */
 export default class Main {
     constructor() {
-        this.platform = "devtools";//"ios"//
+        this.platform = "ios"//"devtools";//
         this.touchHandler = this.touchEventHandler.bind(this)
         this.gameplayMode = GAMEMODE.KILL_SCREEN;
 
@@ -117,6 +128,7 @@ export default class Main {
         //g.dotEatingSoundPart = [1, 1];
         //g.clearDotEatingNow();
         newStart ? this.changeGameplayMode(GAMEMODE.NEWGAME_STARTING) : this.changeGameplayMode(GAMEMODE.GAME_RESTARTING)
+        //this.changeGameplayMode(GAMEMODE.CUTSCENE);
 
     }
     restart() {
@@ -175,15 +187,25 @@ export default class Main {
      * 每一帧重新绘制所有的需要展示的元素
      */
     render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        //ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = "black";  // Specify black as the fill color.
+        ctx.fillRect(0, 0, canvas.width, canvas.height);  // Create a filled rectangle.
         if (this.gameplayMode == GAMEMODE.TRANSITION_INTO_NEXT_SCENE)
             return;
+        if (this.gameplayMode == GAMEMODE.CUTSCENE) {
+            for (let key in this.cutsceneActors) {
+                this.cutsceneActors[key].render(gameRes);
+            }
+            return;
+        }
+
+        
         if (this.gameplayMode == null || this.gameplayMode == GAMEMODE.KILL_SCREEN) {
             gameRes.renderImage(100, 112, this.playfieldY + 32 * 8 + 32, 1, 1);//, canvas.height - 100, 1, 1);
         } else {//if (this.gameplayMode != GAMEMODE.KILL_SCREEN) {
             this.renderPlayfield(gameRes);
             if (this.fruitShown) {
-                gameRes.renderImage(46, fruitPos[1], fruitPos[0] + this.playfieldY, 0, 0);
+                gameRes.renderImage(fruitIdxes[this.levels.fruit], fruitPos[1], fruitPos[0] + this.playfieldY, 0, 0);
             }
 
             if (this.gameplayMode == GAMEMODE.NEWGAME_STARTING) {
@@ -197,6 +219,13 @@ export default class Main {
 
             if (this.showReady)
                 gameRes.renderImage(4, 114, 189, 1, 1)
+            else if (this.gameplayMode == GAMEMODE.GAMEOVER) {
+                gameRes.renderImage(85, 110, 189, 1, 1)
+            }
+
+            if (this.gameplayMode == GAMEMODE.GHOST_DIED){
+                gameRes.renderImage(ghostScore[this.modeScoreMultiplier / 2], this.actors[this.ghostBeingEatenId].pos[1]+4, this.actors[this.ghostBeingEatenId].pos[0]+4 + this.playfieldY, 1, 1)
+            }
         }
     }
 
@@ -210,7 +239,6 @@ export default class Main {
     loop() {
         this.frame++;
         this.debugFrame++;
-        this.intervalTime = (this.intervalTime + 1) % DEFAULT_FPS;
         // if (this.debugFrame < 30) {
         //     requestAnimationFrame(
         //         this.loop.bind(this),
@@ -225,7 +253,6 @@ export default class Main {
         // }
 
         this.update()
-        if (this.frame % 2 == 0) this.update();
         this.render()
 
 
@@ -265,19 +292,21 @@ export default class Main {
 
     renderPlayfield(gameRes) {
         if (this.gameplayMode == GAMEMODE.LEVEL_COMPLETED) {
-            gameRes.renderImage(Math.floor(this.frame/6) % 2 == 0 ? 0 : 1, this.playfieldX, this.playfieldY);
+            gameRes.renderImage(Math.floor(this.frame / 6) % 2 == 0 ? 0 : 1, this.playfieldX, this.playfieldY);
         }
         else {
             gameRes.renderImage(0, this.playfieldX, this.playfieldY);
         }
 
+        let showEnergy = this.gameplayMode != GAMEMODE.ORDINARY_PLAYING || Math.floor(this.frame / 10) % 2 == 0
         for (let y in this.playfield) {
             let fieldy = this.playfield[y];
             for (let x in fieldy) {
                 if (fieldy[x].dot == 1) {
                     gameRes.renderImage(2, Number(x) + this.playfieldX, Number(y) + this.playfieldY)
                 } else if (fieldy[x].dot == 2) {
-                    gameRes.renderImage(11, Number(x) + this.playfieldX, Number(y) + this.playfieldY)
+                    if (showEnergy)
+                        gameRes.renderImage(11, Number(x) + this.playfieldX, Number(y) + this.playfieldY)
                 }
             }
         }
@@ -313,6 +342,60 @@ export default class Main {
         //         }
         //     }
         // }
+    }
+
+    startCutscene() {
+        this.cutscene = CUTSCENE[this.cutsceneId];
+        this.cutsceneActors = [];
+        this.cutsceneSequenceId = -1;
+        for (let k in this.cutscene.actors) {
+            let actorId = this.cutscene.actors[k].id;
+            if (actorId > 0) actorId += this.playerCount - 1;
+            let actor = new Actor(actorId, this);
+            actor.pos = [this.cutscene.actors[k].y * 8, this.cutscene.actors[k].x * 8];
+            actor.posDelta = [0, 0];
+            actor.ghost = this.cutscene.actors[k].ghost;
+            this.cutsceneActors.push(actor);
+        }
+        this.cutsceneNextSequence();
+    }
+
+    stopCutscene() {
+        this.newLevel(false);
+    }
+
+    checkCutscene() {
+        if (this.cutsceneTime <= 0)
+            this.cutsceneNextSequence()
+    };
+    advanceCutscene() {
+        for (var b in this.cutsceneActors) {
+            var c = this.cutsceneActors[b],
+                d = PM_MOVEMENTS[c.dir];
+            c.pos[d.axis] += d.increment * c.speed;
+            //c.b()
+        }
+        this.cutsceneTime--
+    };
+
+    cutsceneNextSequence() {
+        this.cutsceneSequenceId++;
+        if (this.cutscene.sequence.length == this.cutsceneSequenceId)
+            this.stopCutscene();
+        else {
+            var seq = this.cutscene.sequence[this.cutsceneSequenceId];
+            this.cutsceneTime = seq.time * DEFAULT_FPS;
+            for (var k in this.cutsceneActors) {
+                var actor = this.cutsceneActors[k];
+                actor.dir = seq.moves[k].dir;
+                actor.speed = seq.moves[k].speed;
+                if (seq.moves[k].elId)
+                    actor.cutSceneId = seq.moves[k].elId;
+                if (seq.moves[k].mode)
+                    actor.mode = seq.moves[k].mode;
+                //d.b()
+            }
+        }
     }
 
 
@@ -595,10 +678,10 @@ export default class Main {
             this.alternateDotCount++;
             switch (this.alternateDotCount) {
                 case PEN_LEAVING_FOOD_LIMITS[1]:
-                    this.actors[g.playerCount + 1].freeToLeavePen = true;
+                    this.actors[this.playerCount + 1].freeToLeavePen = true;
                     break;
                 case PEN_LEAVING_FOOD_LIMITS[2]:
-                    this.actors[g.playerCount + 2].freeToLeavePen = true;
+                    this.actors[this.playerCount + 2].freeToLeavePen = true;
                     break;
                 case PEN_LEAVING_FOOD_LIMITS[3]:
                     if (this.actors[this.playerCount + 3].mode == ACTORMODE.IN_PEN)
@@ -685,6 +768,7 @@ export default class Main {
 
     playerDies(b) {
         this.playerDyingId = b;
+        this.actors[b].idx = 0;
         this.changeGameplayMode(GAMEMODE.PLAYER_DYING)
     };
 
@@ -701,12 +785,12 @@ export default class Main {
                         return
                     } else {
                         // ...otherwise, the ghost kills Pac-Man
-                        if (g.actors[i].mode != ACTORMODE.EATEN &&
-                            g.actors[i].mode != ACTORMODE.IN_PEN &&
-                            g.actors[i].mode != ACTORMODE.LEAVING_PEN &&
-                            g.actors[i].mode != ACTORMODE.RE_LEAVING_FROM_PEN &&
-                            g.actors[i].mode != ACTORMODE.ENTERING_PEN)
-                            g.playerDies(j)
+                        if (this.actors[i].mode != ACTORMODE.EATEN &&
+                            this.actors[i].mode != ACTORMODE.IN_PEN &&
+                            this.actors[i].mode != ACTORMODE.LEAVING_PEN &&
+                            this.actors[i].mode != ACTORMODE.RE_LEAVING_FROM_PEN &&
+                            this.actors[i].mode != ACTORMODE.ENTERING_PEN)
+                            this.playerDies(j)
                     }
                 }
             }
@@ -781,6 +865,7 @@ export default class Main {
                 //    b.id = "pcm-re";
                 //    g.prepareElement(b, 160, 0);
                 //    g.playfieldEl.appendChild(b);
+                this.showReady = true;
                 this.gameplayModeTime = this.timing[6];
                 break;
             case GAMEMODE.NEWGAME_STARTING://4://显示READY!倒计时等待游戏开始
@@ -859,9 +944,9 @@ export default class Main {
                         this.ghostEyesCount++;
                         this.playAmbientSound();
                         //this.actors[this.ghostBeingEatenId].el.className = "pcm-ac";
-                        this.actors[this.ghostBeingEatenId].changeActorMode(GAMEMODE.GAMEOVER);
+                        this.actors[this.ghostBeingEatenId].changeActorMode(ACTORMODE.EATEN);
                         var c = false;
-                        for (b = this.playerCount; b < this.playerCount + 4; b++)
+                        for (let b = this.playerCount; b < this.playerCount + 4; b++)
                             if (this.actors[b].mode == ACTORMODE.FRIGHTENED ||
                                 (this.actors[b].mode == ACTORMODE.IN_PEN || this.actors[b].mode == ACTORMODE.RE_LEAVING_FROM_PEN) &&
                                 !this.actors[b].eatenInThisFrightMode) {
@@ -1102,24 +1187,30 @@ export default class Main {
     // 游戏逻辑更新主函数
     update() {
         if (this.gameplayMode == GAMEMODE.CUTSCENE) {
-            // for (b = 0; b < g.tickMultiplier + c; b++) {
-            //     g.advanceCutscene();
-            //     g.intervalTime = (g.intervalTime + 1) % DEFAULT_FPS;
-            //     g.globalTime++
-            // }
-            // g.checkCutscene();
-            // g.blinkScoreLabels()
+            for (let i = 0; i < (this.frame % 2 == 0 ? 2 : 1); ++i) {
+                this.advanceCutscene();
+                this.intervalTime = (this.intervalTime + 1) % DEFAULT_FPS;
+                // g.globalTime++
+            }
+            this.checkCutscene();
+            //g.blinkScoreLabels()
         }
         else {
-            this.moveActors();
-            if (this.gameplayMode == 0) {
-                if (this.tilesChanged) {
-                    //g.detectCollisions();
-                    this.updateActorTargetPositions()
+
+            //if (this.frame % 2 == 0) this.update();
+            for (let i = 0; i < (this.frame % 2 == 0 ? 2 : 1); ++i) {
+                this.moveActors();
+                if (this.gameplayMode == 0) {
+                    if (this.tilesChanged) {
+                        this.detectCollisions();
+                        this.updateActorTargetPositions()
+                    }
                 }
+                this.intervalTime = (this.intervalTime + 1) % DEFAULT_FPS;
+                this.handleTimers();
             }
         }
-        this.handleTimers();
+
     }
 
 

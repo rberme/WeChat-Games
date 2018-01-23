@@ -36,6 +36,12 @@ const pacmanAnim = [
     38, 39, 40, 41, 42, 43, 44, 45,//yellow
 
     50, 51, 52, 53,//受惊
+
+    54, 55, 56, 55,//pacman右大 //第52个
+
+    57, 59, 60, 61, 61, 62, 63,//stick //第56个
+
+    68, 69, 70, 71,//眼睛上下左右  //63
 ];
 
 const Dir2Anim = {
@@ -61,7 +67,51 @@ export default class Actor {
 
 
     render(gameRes) {
-        if (this.mainRef.gameplayMode == GAMEMODE.LEVEL_BEING_COMPLETED ||
+        if (this.mainRef.gameplayMode == GAMEMODE.CUTSCENE) {
+            if (this.cutSceneId == 1) {
+                this.idx = 52 + Math.floor(this.mainRef.frame / 3) % 4;
+                gameRes.renderImage(pacmanAnim[this.idx], this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+                return;
+            } else if (this.cutSceneId >= 56 && this.cutSceneId <= 62) {
+                this.idx = this.cutSceneId;//56 + Math.floor(this.mainRef.frame / 3) % 5;
+                gameRes.renderImage(pacmanAnim[this.idx], this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+                return;
+            } else if (this.cutSceneId >= 64 && this.cutSceneId <= 66) {
+                this.idx = this.cutSceneId + Math.floor(this.mainRef.frame / 5) % 2;
+                gameRes.renderImage(this.idx, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+                return;
+            } else {
+                if (this.ghost == false) {
+                    this.idx = Math.floor(this.mainRef.frame / 3) % 4;
+                    this.idx += Dir2Anim[this.dir] * 4;
+                } else {
+                    if (this.mode == ACTORMODE.FRIGHTENED) {
+                        this.idx = 48 + Math.floor(this.mainRef.frame / 3) % 2;
+                    } else {
+                        this.idx = 16 + Math.floor(this.mainRef.frame / 3) % 2 + Dir2Anim[this.dir] * 2;
+                    }
+                }
+                gameRes.renderImage(pacmanAnim[this.idx], this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+            }
+            return;
+        }
+
+        if (this.mainRef.gameplayMode == GAMEMODE.GAMEOVER){
+            return;
+        }else if (this.mainRef.gameplayMode == GAMEMODE.PLAYER_DIED){
+            if (this.id == this.mainRef.playerDyingId) {
+                if (this.idx < 12 && this.mainRef.frame % 10 == 0)
+                    this.idx++;
+                gameRes.renderImage(this.idx + 72, this.pos[1] + 4, this.pos[0] + 4 + this.mainRef.playfieldY, 1, 1);
+            }
+            return;
+        } else if (this.mainRef.gameplayMode == GAMEMODE.PLAYER_DYING) {
+
+        } else if (this.mainRef.gameplayMode == GAMEMODE.GHOST_DIED) {
+            if (this.mainRef.ghostBeingEatenId == this.id ||
+                this.mainRef.playerEatingGhostId == this.id)
+                return;
+        } else if (this.mainRef.gameplayMode == GAMEMODE.LEVEL_BEING_COMPLETED ||
             this.mainRef.gameplayMode == GAMEMODE.LEVEL_COMPLETED ||
             this.mainRef.gameplayMode == GAMEMODE.TRANSITION_INTO_NEXT_SCENE) {
 
@@ -91,8 +141,10 @@ export default class Actor {
                         } else if (this.id == this.mainRef.playerCount + 3) {
                             this.idx = 40 + Dir2Anim[this.dir] * 2;
                         }
+                    } else if (this.mode == ACTORMODE.EATEN) {
+                        this.idx = 63 + Dir2Anim[this.dir];
                     } else {
-                        if (this.mainRef.frightModeTime) {
+                        if (this.mode == ACTORMODE.FRIGHTENED) {//this.mainRef.frightModeTime) {
                             this.idx = 48 + Math.floor(this.mainRef.frame / 3) % 2;
                             if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
                                 this.idx += Math.floor(this.mainRef.frame / 12) % 2 * 2;
