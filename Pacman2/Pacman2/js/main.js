@@ -49,7 +49,7 @@ const ghostScore = {
  */
 export default class Main {
     constructor() {
-        this.platform = "ios"//"devtools";//
+        this.platform = "devtools";//"ios"//
         this.touchHandler = this.touchEventHandler.bind(this)
         this.gameplayMode = GAMEMODE.KILL_SCREEN;
 
@@ -347,6 +347,7 @@ export default class Main {
     startCutscene() {
         this.cutscene = CUTSCENE[this.cutsceneId];
         this.cutsceneActors = [];
+        wx.triggerGC();
         this.cutsceneSequenceId = -1;
         for (let k in this.cutscene.actors) {
             let actorId = this.cutscene.actors[k].id;
@@ -496,6 +497,7 @@ export default class Main {
 
     createActors() {
         this.actors = [];
+        wx.triggerGC();
         for (let i = 0; i < this.playerCount + 4; ++i) {
             this.actors[i] = new Actor(i, this);
             if (i < this.playerCount) {
