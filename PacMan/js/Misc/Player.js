@@ -23,17 +23,29 @@ const Dir2Anim = {
     8: 3,
 }
 
+const halfBLOCKSIZE = (BLOCKSIZE>>1);
 // let tileCollide = new TileCollide();
 export default class Player {
     constructor(mainRef) {
         this.mainRef = mainRef;
-        this.pos = [ACTORINITIAL[0].x * BLOCKSIZE + BLOCKSIZE / 2, ACTORINITIAL[0].y * BLOCKSIZE + BLOCKSIZE / 2];
+    }
+
+    resetPlayer(){
+        this.pos = [ACTORINITIAL[0].x * BLOCKSIZE + halfBLOCKSIZE, ACTORINITIAL[0].y * BLOCKSIZE + halfBLOCKSIZE];
+        this.tilePos = [this.pos[0],this.pos[1]];
         this.dir = PM_DIRECTION.LEFT;
         this.requestDir = 0;
     }
 
     update() {
-
+        var b = (this.pos[0] - halfBLOCKSIZE) / 8,
+            c = (this.pos[1] - halfBLOCKSIZE) / 8,
+            tilePos = [Math.round(b) * 8 + halfBLOCKSIZE, Math.round(c) * 8 + halfBLOCKSIZE];
+        if (tilePos[0] != this.tilePos[0] || tilePos[1] != this.tilePos[1]) {//移动到了新的块
+            this.tilePos[0] = tilePos[0];
+            this.tilePos[1] = tilePos[1]
+            this.mainRef.tilesChanged = true;
+        }
     }
 
 
