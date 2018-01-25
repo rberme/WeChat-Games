@@ -195,4 +195,36 @@ export default class WorldMap {
         //     }
         // }
     }
+
+
+    prepareAllowedDirections() {
+        for (var b = 8; b < this.playfieldHeight * 8; b += 8) {
+            for (var c = 8; c < this.playfieldWidth * 8; c += 8) {
+                this.playfield[b][c].allowedDir = 0;
+                if (this.playfield[b - 8][c].path)//上
+                    this.playfield[b][c].allowedDir += 1;
+                if (this.playfield[b + 8][c].path)//下
+                    this.playfield[b][c].allowedDir += 2;
+                if (this.playfield[b][c - 8].path)//左
+                    this.playfield[b][c].allowedDir += 4;
+                if (this.playfield[b][c + 8].path)//右
+                    this.playfield[b][c].allowedDir += 8
+            }
+        }
+        this.playfield[14 * 8][0].allowedDir = 12;
+        this.playfield[14 * 8][27 * 8].allowedDir = 12;
+
+        this.playfield[14 * 8][-8] = this.playfield[14 * 8][-16] = {
+            path: 1,
+            dot: 0,
+            intersection: 0,
+            allowedDir: 12
+        };
+        this.playfield[14 * 8][28 * 8] = this.playfield[14 * 8][29 * 8] = {
+            path: 1,
+            dot: 0,
+            intersection: 0,
+            allowedDir: 12
+        };
+    };
 }

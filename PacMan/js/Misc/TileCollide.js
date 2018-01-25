@@ -28,6 +28,13 @@ const tempData8 = {
 const offsetY = [-1, -1, -1, 0, 0, 0, 1, 1, 1];
 const offsetX = [-1, 0, 1, -1, 0, 1, -1, 0, 1];
 
+const tempDataForPacman = {
+    1: 0b10000000,
+    2: 0b00001000,
+    4: 0b00000010,
+    8: 0b00100000,
+};
+
 // import Static from '../Utility/Static'
 // let Stat = new Static();
 // const __ = {
@@ -47,14 +54,19 @@ export default class TileCollide {
     }
 
     // 1 2 4 8 上 下 左 右
-    Move2(/*Vector2*/ pos, /*int*/ dir, /*float*/ leftDist, adjFun) {
+    Move2(player,/*float*/ leftDist, adjFun) {
+        this.player = player;
+        let dir = this.player.dir;
+        let pos = this.player.pos;
         let tempDir = 0b10000000;
 
-        if (dir == 1) tempDir = 0b10000000;
-        else if (dir == 2) tempDir = 0b00001000;
-        else if (dir == 4) tempDir = 0b00000010;
-        else if (dir == 8) tempDir = 0b00100000;
-        else return pos;
+        // if (dir == 1) tempDir = 0b10000000;
+        // else if (dir == 2) tempDir = 0b00001000;
+        // else if (dir == 4) tempDir = 0b00000010;
+        // else if (dir == 8) tempDir = 0b00100000;
+        // else return pos;
+        if (this.player.dir == 0 && this.player.requestDir == 0)
+            return pos;
 
         let fixedPos = [];
         fixedPos[0] = pos[0] * FIXEDCOEFF;
@@ -76,7 +88,8 @@ export default class TileCollide {
         return pos;
     }
 
-    Move(/*Vector2*/ pos, /*Vector2*/ dir, /*float*/ leftDist,adjFun) {
+    Move(/*Vector2*/ pos, /*Vector2*/ dir, /*float*/ leftDist, adjFun) {
+
         let tempDir = 0b10000000;
 
         let absX = Math.abs(dir[0]);
@@ -225,46 +238,110 @@ export default class TileCollide {
             }
         }
         finalDir ^= 0b11111111;
-        //////////////////////////////////////////////////
-        let tempDir_OffsetRange = 0;
-        let tempDir2 = tempDir;
-        let tempDir3 = tempDir;
-        if (tempDir2 == 0b00000001) {
-            tempDir2 = 0b10000000;
-            tempDir3 = 0b00000010;
-            tempDir_OffsetRange = 0b11000111;
-        }
-        else if (tempDir2 == 0b10000000) {
-            tempDir2 = 0b00000001;
-            tempDir3 = 0b01000000;
-            tempDir_OffsetRange = 0b11100011;
-        }
-        else {
-            tempDir2 = tempDir >> 1;
-            tempDir3 = tempDir << 1;
-            tempDir_OffsetRange = tempData8[tempDir];
-        }
 
-        let checkDir = tempDir;
-        if ((finalDir & tempDir) == 0) {
-            if ((finalDir & tempDir2) == 0) {
-                if ((finalDir & tempDir3) == 0) {
-                    if ((tempDir_OffsetRange & finalDir) > 0) {
-                        checkDir = this.MoveOffset(adjData, tempDir, deltaX, deltaY);
-                        if (checkDir == 0) {
+        //原版////////////////////////////////////////////////
+        // let tempDir_OffsetRange = 0;
+        // let tempDir2 = tempDir;
+        // let tempDir3 = tempDir;
+        // if (tempDir2 == 0b00000001) {
+        //     tempDir2 = 0b10000000;
+        //     tempDir3 = 0b00000010;
+        //     tempDir_OffsetRange = 0b11000111;
+        // }
+        // else if (tempDir2 == 0b10000000) {
+        //     tempDir2 = 0b00000001;
+        //     tempDir3 = 0b01000000;
+        //     tempDir_OffsetRange = 0b11100011;
+        // }
+        // else {
+        //     tempDir2 = tempDir >> 1;
+        //     tempDir3 = tempDir << 1;
+        //     tempDir_OffsetRange = tempData8[tempDir];
+        // }
+
+        // let checkDir = tempDir;
+        // if ((finalDir & tempDir) == 0) {
+        //     if ((finalDir & tempDir2) == 0) {
+        //         if ((finalDir & tempDir3) == 0) {
+        //             if ((tempDir_OffsetRange & finalDir) > 0) {
+        //                 checkDir = this.MoveOffset(adjData, tempDir, deltaX, deltaY);
+        //                 if (checkDir == 0) {
+        //                     fixedLeftDist = 0;
+        //                     return [fixedCurPos,0];
+        //                 }
+        //             }
+        //             else {
+        //                 fixedLeftDist = 0;
+        //                 return [fixedCurPos,0];
+        //             }
+        //         }
+        //         else checkDir = tempDir3;
+        //     }
+        //     else
+        //         checkDir = tempDir2;
+        // }
+        ///////////////////////////////////////////////////
+        //修改以符合吃豆人要求/////////////////////////////////////////////////
+
+        let preferDir = [this.player.requestDir, this.player.dir];
+        let checkDir;
+        for (let i = 0; i < preferDir.length; ++i) {
+            if (i == 0 && preferDir[i] == 0)
+                continue;
+            else if (i == 1 && preferDir[i] == 0) {
+                fixedLeftDist = 0;
+                return [fixedCurPos, 0];
+            }
+            let tempDir_OffsetRange = 0;
+            let tempDir = tempDataForPacman[preferDir[i]];
+            let tempDir2 = tempDir;
+            let tempDir3 = tempDir;
+            if (tempDir2 == 0b00000001) {
+                tempDir2 = 0b10000000;
+                tempDir3 = 0b00000010;
+                tempDir_OffsetRange = 0b11000111;
+            }
+            else if (tempDir2 == 0b10000000) {
+                tempDir2 = 0b00000001;
+                tempDir3 = 0b01000000;
+                tempDir_OffsetRange = 0b11100011;
+            }
+            else {
+                tempDir2 = tempDir >> 1;
+                tempDir3 = tempDir << 1;
+                tempDir_OffsetRange = tempData8[tempDir];
+            }
+
+            checkDir = tempDir;
+            if ((finalDir & tempDir) == 0) {
+                if ((finalDir & tempDir2) == 0) {
+                    if ((finalDir & tempDir3) == 0) {
+                        if ((tempDir_OffsetRange & finalDir) > 0) {
+                            checkDir = this.MoveOffset(adjData, tempDir, deltaX, deltaY);
+                            if (checkDir == 0) {
+                                if (i == 0) continue;
+                                this.player.dir = 0;
+                                fixedLeftDist = 0;
+                                return [fixedCurPos, 0];
+                            }
+                        }
+                        else {
+                            if (i == 0) continue;
+                            this.player.dir = 0;
                             fixedLeftDist = 0;
-                            return [fixedCurPos,0];
+                            return [fixedCurPos, 0];
                         }
                     }
-                    else {
-                        fixedLeftDist = 0;
-                        return [fixedCurPos,0];
-                    }
+                    else checkDir = tempDir3;
                 }
-                else checkDir = tempDir3;
+                else
+                    checkDir = tempDir2;
             }
-            else
-                checkDir = tempDir2;
+            if (i == 0) {
+                this.player.dir = this.player.requestDir;
+                this.player.requestDir = 0;
+            }
+            break;
         }
         ///////////////////////////////////////////////////
         deltaX = (deltaX == 0 && (checkDir & 0b00000111) > 0) ? fixedBlockWidth : deltaX;
