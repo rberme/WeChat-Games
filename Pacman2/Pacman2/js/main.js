@@ -1073,7 +1073,7 @@ export default class Main {
 
     extraLife = function (b) {
         this.playSound("extra-life", 0);
-        this.extraLifeAwarded[b] = a;
+        this.extraLifeAwarded[b] = true;
         this.lives++;
         if (this.lives > 5) this.lives = 5;
         //this.updateChromeLives()

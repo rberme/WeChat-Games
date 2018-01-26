@@ -1,7 +1,6 @@
 import {
     ACTORINITIAL,
     BLOCKSIZE,
-    PM_DIRECTION,
 } from './GameRes'
 
 const pacmanAnim = [
@@ -23,37 +22,48 @@ const Dir2Anim = {
     8: 3,
 }
 
-const halfBLOCKSIZE = (BLOCKSIZE>>1);
+const halfBLOCKSIZE = (BLOCKSIZE >> 1);
 // let tileCollide = new TileCollide();
 export default class Player {
     constructor(mainRef) {
+        this.id = 0;
         this.mainRef = mainRef;
     }
 
-    resetPlayer(){
+    resetPlayer() {
         this.pos = [ACTORINITIAL[0].x * BLOCKSIZE + halfBLOCKSIZE, ACTORINITIAL[0].y * BLOCKSIZE + halfBLOCKSIZE];
-        this.tilePos = [this.pos[0],this.pos[1]];
-        this.dir = PM_DIRECTION.LEFT;
+        this.tilePos = [this.pos[0], this.pos[1]];
+        this.dir = ACTORINITIAL[0].dir;
         this.requestDir = 0;
+        this.animIdx = 3;
+        this.speed = this.fullSpeed;
     }
 
     update() {
         var b = (this.pos[0] - halfBLOCKSIZE) / 8,
             c = (this.pos[1] - halfBLOCKSIZE) / 8,
-            tilePos = [Math.round(b) * 8 + halfBLOCKSIZE, Math.round(c) * 8 + halfBLOCKSIZE];
-        if (tilePos[0] != this.tilePos[0] || tilePos[1] != this.tilePos[1]) {//移动到了新的块
-            this.tilePos[0] = tilePos[0];
-            this.tilePos[1] = tilePos[1]
+            tilePos = [Math.round(b) * 8, Math.round(c) * 8];
+        if (tilePos[0]+halfBLOCKSIZE != this.tilePos[0] || tilePos[1]+halfBLOCKSIZE != this.tilePos[1]) {//移动到了新的块
+            this.tilePos[0] = tilePos[0]+halfBLOCKSIZE;
+            this.tilePos[1] = tilePos[1]+halfBLOCKSIZE
+
+            if (this.mainRef.worldMap.playfield[tilePos[1]][tilePos[0]].dot){
+                this.mainRef.dotEaten(this.id, tilePos);
+                this.speed = this.dotEatingSpeed;
+            }
+            else this.speed = this.fullSpeed;
             this.mainRef.tilesChanged = true;
+        }
+
+        if (this.dir) {
+            this.animIdx = Math.floor(this.mainRef.frame / 3) % 4;
+            this.animIdx += Dir2Anim[this.dir] * 4;
         }
     }
 
 
     render(gameRes) {
-        if (this.dir) {
-            this.idx = Math.floor(this.mainRef.frame / 3) % 4;
-            this.idx += Dir2Anim[this.dir] * 4;
-        }
-        gameRes.renderImage(pacmanAnim[this.idx], this.pos[0], this.pos[1] + this.mainRef.worldMap.playfieldY, 1, 1);
+        gameRes.renderImage(pacmanAnim[this.animIdx], this.pos[0], this.pos[1] + this.mainRef.worldMap.playfieldY, 1, 1);
     }
+
 }

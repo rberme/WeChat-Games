@@ -121,13 +121,6 @@ const ALTASRECT = {
 
 }
 
-export const PM_DIRECTION = {
-    NONE: 0,
-    UP: 1,
-    DOWN: 2,
-    LEFT: 4,
-    RIGHT: 8
-}
 const y = 0.8 * 0.4
 export const PENROUTINEPOS = {//在围栏中来回移动的参考点
     1: [{//围栏中左边怪来回的点 (上下) 36-26->10  5+7->12
@@ -299,7 +292,27 @@ export const PENROUTINEPOS = {//在围栏中来回移动的参考点
         speed: y
     }]
 }
-
+export const PENEXIT = [112, 92];//围栏的出口
+export const TIMES = {//倒计时时间 秒
+    0: 0.16,
+    1: 0.23,
+    2: 1,
+    3: 1,
+    4: 2.23,
+    5: 0.3,
+    6: 1.9,
+    7: 2.23,
+    8: 1.9,
+    9: 5,
+    10: 1.9,
+    11: 1.18,
+    12: 0.3,
+    13: 0.5,
+    14: 1.9,
+    15: 9,
+    16: 10,
+    17: 0.26
+}
 export const BLOCKSIZE = 8;
 export const ACTORINITIAL = [//怪物的初始位置，方向，散开点
     {//玩家1的位置方向
@@ -590,7 +603,7 @@ export const ALLPATHS = [
         h: 4
     },
 ]
-
+export const PEN_LEAVING_FOOD_LIMITS = [0, 7, 17, 32];
 export const NODOTPATHS = [
     {
         x: 9,

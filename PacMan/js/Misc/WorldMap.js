@@ -53,8 +53,8 @@ export default class WorldMap {
     preparePaths() {//解析路径数据
         //给路径上加点,类型
         for (var idx in ALLPATHS) {
-            var path = ALLPATHS[idx],
-                d = path.type;
+            var path = ALLPATHS[idx]//,
+                //d = path.type;
             if (path.w) {
                 let y = path.y * BLOCKSIZE;
                 for (let x = path.x * BLOCKSIZE; x <= (path.x + path.w - 1) * BLOCKSIZE; x += BLOCKSIZE) {
@@ -63,7 +63,7 @@ export default class WorldMap {
                         this.playfield[y][x].dot = 1;
                         this.dotsRemaining++
                     }
-                    this.playfield[y][x].type = (!d || x != path.x * BLOCKSIZE && x != (path.x + path.w - 1) * BLOCKSIZE ? d : 0)
+                    //this.playfield[y][x].type = (!d || x != path.x * BLOCKSIZE && x != (path.x + path.w - 1) * BLOCKSIZE ? d : 0)
                 }
                 //头尾是交叉路口
                 this.playfield[y][path.x * BLOCKSIZE].intersection = true;
@@ -79,7 +79,7 @@ export default class WorldMap {
                         this.playfield[y][x].dot = 1;
                         this.dotsRemaining++
                     }
-                    this.playfield[y][x].type = (!d || y != path.y * BLOCKSIZE && y != (path.y + path.h - 1) * BLOCKSIZE ? d : 0)
+                    //this.playfield[y][x].type = (!d || y != path.y * BLOCKSIZE && y != (path.y + path.h - 1) * BLOCKSIZE ? d : 0)
                 }
                 this.playfield[path.y * BLOCKSIZE][x].intersection = true;
                 this.playfield[(path.y + path.h - 1) * BLOCKSIZE][x].intersection = true
