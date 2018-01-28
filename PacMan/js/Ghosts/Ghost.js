@@ -98,7 +98,7 @@ export default class Ghost {
         this.targetPlayerId = 0;
         this.freeToLeavePen = false;
         this.eatenInThisFrightMode = false;
-        this.outFrightMode = false;
+        this.removeFrightMode = true;
 
         if (this.id == this.mainRef.playerCount) {
             this.animIdx = 0 + Dir2Anim[this.dir] * 2;
@@ -225,7 +225,7 @@ export default class Ghost {
                 this.tunnelSpeed = this.fullSpeed = 1.6;
                 this.targetPos = [PENEXIT[0], PENEXIT[1]];
                 this.freeToLeavePen = this.followingRoutine = false;
-                this.outFrightMode = true;
+                this.removeFrightMode = true;
                 break;
             case ACTORMODE.IN_PEN:
                 this.targetPlayerId = 0;
@@ -312,7 +312,7 @@ export default class Ghost {
             this.reverseDirectionsNext = false;
         }
         moveDistance = Math.round(moveDistance * FIXEDCOEFF);
-        if (this.mode == ACTORMODE.EATEN) moveDistance = (moveDistance<<1);
+        if (this.mode == ACTORMODE.EATEN) moveDistance = (moveDistance << 1);
         mapWidth = Math.round(mapWidth << FIXEDBIT);
         let fixedPosX = Math.round(this.pos[0] * FIXEDCOEFF);
         let fixedPosY = Math.round(this.pos[1] * FIXEDCOEFF);
@@ -629,8 +629,8 @@ export default class Ghost {
             if (this.mode == ACTORMODE.EATEN) {
                 this.animIdx = 47 + Dir2Anim[this.dir];
             } else {
-                if (this.outFrightMode==false && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
-                //if ((this.mode == ACTORMODE.FRIGHTENED || ((this.mode == ACTORMODE.LEAVING_PEN || this.mode == ACTORMODE.IN_PEN)&& this.leavedPen==false)) && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
+                if (this.removeFrightMode == false && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
+                    //if ((this.mode == ACTORMODE.FRIGHTENED || ((this.mode == ACTORMODE.LEAVING_PEN || this.mode == ACTORMODE.IN_PEN)&& this.leavedPen==false)) && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
                     this.animIdx = 32 + Math.floor(this.mainRef.frame / 3) % 2;
                     if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
                         this.animIdx += Math.floor(this.mainRef.frame / 12) % 2 * 2;

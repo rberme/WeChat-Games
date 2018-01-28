@@ -657,7 +657,8 @@ export default class Main {
                     actor.modeChangedWhileInPen = true;
                 if (actorMode == ACTORMODE.FRIGHTENED) {
                     actor.eatenInThisFrightMode = false;
-                    actor.outFrightMode = false;
+                    if (actor.mode != ACTORMODE.EATEN && actor.mode != ACTORMODE.ENTERING_PEN)
+                        actor.removeFrightMode = false;
                 }
                 if (actor.mode != ACTORMODE.EATEN &&
                     actor.mode != ACTORMODE.IN_PEN &&
