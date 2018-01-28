@@ -69,8 +69,11 @@ const pacmanAnim = [
 
     68, 69, 70, 71,//眼睛上下左右  //47
 ];
-
+const FIXEDBIT = 10
+const FIXEDCOEFF = 1024
 const halfBLOCKSIZE = (BLOCKSIZE >> 1);
+const fixedBLOCKSIZE = (BLOCKSIZE << FIXEDBIT);
+const fixedHalfBLOCKSIZE = (halfBLOCKSIZE << FIXEDBIT);
 export default class Ghost {
     constructor(id, mainRef) {
         this.mainRef = mainRef;
@@ -95,6 +98,7 @@ export default class Ghost {
         this.targetPlayerId = 0;
         this.freeToLeavePen = false;
         this.eatenInThisFrightMode = false;
+        this.outFrightMode = false;
 
         if (this.id == this.mainRef.playerCount) {
             this.animIdx = 0 + Dir2Anim[this.dir] * 2;
@@ -221,6 +225,7 @@ export default class Ghost {
                 this.tunnelSpeed = this.fullSpeed = 1.6;
                 this.targetPos = [PENEXIT[0], PENEXIT[1]];
                 this.freeToLeavePen = this.followingRoutine = false;
+                this.outFrightMode = true;
                 break;
             case ACTORMODE.IN_PEN:
                 this.targetPlayerId = 0;
@@ -297,7 +302,7 @@ export default class Ghost {
 
         let moveDistance = this.speed * 1.5;
         if (this.mode != ACTORMODE.EATEN && Math.round(this.pos[1]) == 14 * BLOCKSIZE + halfBLOCKSIZE &&
-            this.pos[0] < BLOCKSIZE + halfBLOCKSIZE || this.pos[0] > 26 * BLOCKSIZE + halfBLOCKSIZE)
+            (this.pos[0] < BLOCKSIZE + halfBLOCKSIZE || this.pos[0] > 26 * BLOCKSIZE + halfBLOCKSIZE))
             moveDistance = this.tunnelSpeed * 1.5;
 
 
@@ -306,44 +311,43 @@ export default class Ghost {
             this.dir = oppositeDirections[this.dir];
             this.reverseDirectionsNext = false;
         }
-
+        moveDistance = Math.round(moveDistance * FIXEDCOEFF);
+        if (this.mode == ACTORMODE.EATEN) moveDistance = (moveDistance<<1);
+        mapWidth = Math.round(mapWidth << FIXEDBIT);
+        let fixedPosX = Math.round(this.pos[0] * FIXEDCOEFF);
+        let fixedPosY = Math.round(this.pos[1] * FIXEDCOEFF);
+        let checkEaten = (this.mode == ACTORMODE.EATEN && fixedPosY == (PENEXIT[1] << FIXEDBIT))
+        let oldFixedPosX = fixedPosX;
         while (moveDistance > 0) {
-            let fixedPosX = Math.round(this.pos[0]);
-            let fixedPosY = Math.round(this.pos[1]);
-            let blockXX = fixedPosX % BLOCKSIZE;
-            let blockYY = fixedPosY % BLOCKSIZE;
-
-            if (this.mode == ACTORMODE.EATEN) {
-
-            }
-
-
-            if (blockXX != halfBLOCKSIZE) {//横向
-                if (blockXX < halfBLOCKSIZE) {//在左半边
+            let blockXX = (fixedPosX < 0 ? (fixedPosX + fixedBLOCKSIZE >> 4) : fixedPosX) % fixedBLOCKSIZE;
+            let blockYY = fixedPosY % fixedBLOCKSIZE;
+            if (blockXX != fixedHalfBLOCKSIZE) {//横向
+                if (blockXX < fixedHalfBLOCKSIZE) {//在左半边
                     if (this.dir == 4) {//往左移动
-                        let maxDist = blockXX + halfBLOCKSIZE;
+                        let maxDist = blockXX + fixedHalfBLOCKSIZE;
+
                         if (moveDistance >= maxDist) {
-                            this.pos[0] -= maxDist;
-                            if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                            fixedPosX -= maxDist;
+                            if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[0] -= moveDistance;
-                            if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                            fixedPosX -= moveDistance;
+                            if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                             moveDistance = 0;
                             continue;
                         }
                     }
                     else if (this.dir == 8) {//往右移动
-                        let maxDist = halfBLOCKSIZE - blockXX;
+                        let maxDist = fixedHalfBLOCKSIZE - blockXX;
                         if (moveDistance >= maxDist) {
-                            this.pos[0] += maxDist;
-                            if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                            fixedPosX += maxDist;
+                            if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[0] += moveDistance;
-                            if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                            fixedPosX += moveDistance;
+                            if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                             moveDistance = 0;
                             continue;
                         }
@@ -351,57 +355,57 @@ export default class Ghost {
                 }
                 else {//在格子右半边
                     if (this.dir == 4) {//往左移动
-                        let maxDist = blockXX - halfBLOCKSIZE;
+                        let maxDist = blockXX - fixedHalfBLOCKSIZE;
                         if (moveDistance >= maxDist) {
-                            this.pos[0] -= maxDist;
-                            if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                            fixedPosX -= maxDist;
+                            if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[0] -= moveDistance;
-                            if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                            fixedPosX -= moveDistance;
+                            if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                             moveDistance = 0;
                             continue;
                         }
                     }
                     else if (this.dir == 8) {//往右移动
-                        let maxDist = BLOCKSIZE - blockXX + halfBLOCKSIZE;
+                        let maxDist = fixedBLOCKSIZE - blockXX + fixedHalfBLOCKSIZE;
                         if (moveDistance >= maxDist) {
-                            this.pos[0] += maxDist;
-                            if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                            fixedPosX += maxDist;
+                            if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[0] += moveDistance;
-                            if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                            fixedPosX += moveDistance;
+                            if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                             moveDistance = 0;
                             continue;
                         }
                     }
                 }
             }
-            else if (blockYY != halfBLOCKSIZE) {//竖向
-                if (blockYY < halfBLOCKSIZE) {//在上半边
+            else if (blockYY != fixedHalfBLOCKSIZE) {//竖向
+                if (blockYY < fixedHalfBLOCKSIZE) {//在上半边
                     if (this.dir == 1) {//往上移动
-                        let maxDist = blockYY + halfBLOCKSIZE;
+                        let maxDist = blockYY + fixedHalfBLOCKSIZE;
                         if (moveDistance >= maxDist) {
-                            this.pos[1] -= maxDist;
+                            fixedPosY -= maxDist;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[1] -= moveDistance;
+                            fixedPosY -= moveDistance;
                             moveDistance = 0;
                             continue;
                         }
                     }
                     else if (this.dir == 2) {//往下移动
-                        let maxDist = halfBLOCKSIZE - blockYY;
+                        let maxDist = fixedHalfBLOCKSIZE - blockYY;
                         if (moveDistance >= maxDist) {
-                            this.pos[1] += maxDist;
+                            fixedPosY += maxDist;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[1] += moveDistance;
+                            fixedPosY += moveDistance;
                             moveDistance = 0;
                             continue;
                         }
@@ -409,25 +413,25 @@ export default class Ghost {
                 }
                 else {//在格子下半边
                     if (this.dir == 1) {//往上移动
-                        let maxDist = blockYY - halfBLOCKSIZE;
+                        let maxDist = blockYY - fixedHalfBLOCKSIZE;
                         if (moveDistance >= maxDist) {
-                            this.pos[1] -= maxDist;
+                            fixedPosY -= maxDist;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[1] -= moveDistance;
+                            fixedPosY -= moveDistance;
                             moveDistance = 0;
                             continue;
                         }
                     }
                     else if (this.dir == 2) {//往下移动
-                        let maxDist = BLOCKSIZE - blockYY + halfBLOCKSIZE;
+                        let maxDist = fixedBLOCKSIZE - blockYY + fixedHalfBLOCKSIZE;
                         if (moveDistance >= maxDist) {
-                            this.pos[1] += maxDist;
+                            fixedPosY += maxDist;
                             moveDistance -= maxDist;
                         }
                         else {
-                            this.pos[1] += moveDistance;
+                            fixedPosY += moveDistance;
                             moveDistance = 0;
                             continue;
                         }
@@ -436,67 +440,83 @@ export default class Ghost {
             }
             else {//在中心
                 if (this.dir == 1) {//往上移动
-                    let maxDist = BLOCKSIZE;
+                    let maxDist = fixedBLOCKSIZE;
                     if (moveDistance >= maxDist) {
-                        this.pos[1] -= maxDist;
+                        fixedPosY -= maxDist;
                         moveDistance -= maxDist;
                     }
                     else {
-                        this.pos[1] -= moveDistance;
+                        fixedPosY -= moveDistance;
                         moveDistance = 0;
                         continue;
                     }
                 }
                 else if (this.dir == 2) {//往下移动
-                    let maxDist = BLOCKSIZE;
+                    let maxDist = fixedBLOCKSIZE;
                     if (moveDistance >= maxDist) {
-                        this.pos[1] += maxDist;
+                        fixedPosY += maxDist;
                         moveDistance -= maxDist;
                     }
                     else {
-                        this.pos[1] += moveDistance;
+                        fixedPosY += moveDistance;
                         moveDistance = 0;
                         continue;
                     }
                 }
                 else if (this.dir == 4) {//往左移动
-                    let maxDist = BLOCKSIZE;
+                    let maxDist = fixedBLOCKSIZE;
                     if (moveDistance >= maxDist) {
-                        this.pos[0] -= maxDist;
-                        if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                        fixedPosX -= maxDist;
+                        if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                         moveDistance -= maxDist;
                     }
                     else {
-                        this.pos[0] -= moveDistance;
-                        if (this.pos[0] < -halfBLOCKSIZE) this.pos[0] += mapWidth + halfBLOCKSIZE;
+                        fixedPosX -= moveDistance;
+                        if (fixedPosX < -fixedHalfBLOCKSIZE) fixedPosX += mapWidth + fixedBLOCKSIZE;
                         moveDistance = 0;
                         continue;
                     }
                 }
                 else if (this.dir == 8) {//往右移动        
-                    let maxDist = BLOCKSIZE;
+                    let maxDist = fixedBLOCKSIZE;
                     if (moveDistance >= maxDist) {
-                        this.pos[0] += maxDist;
-                        if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                        fixedPosX += maxDist;
+                        if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                         moveDistance -= maxDist;
                     }
                     else {
-                        this.pos[0] += moveDistance;
-                        if (this.pos[0] > mapWidth + halfBLOCKSIZE) this.pos[0] -= (mapWidth + halfBLOCKSIZE);
+                        fixedPosX += moveDistance;
+                        if (fixedPosX > mapWidth + fixedHalfBLOCKSIZE) fixedPosX -= (mapWidth + fixedBLOCKSIZE);
                         moveDistance = 0;
                         continue;
                     }
                 } else break;
             }
 
-            if (this.mode == ACTORMODE.EATEN &&
-                Math.round(this.pos[0]) == PENEXIT[0] &&
-                Math.round(this.pos[1]) == PENEXIT[1]) {
+            // if (this.mode == ACTORMODE.EATEN &&
+            //     Math.round(this.pos[0]) == PENEXIT[0] &&
+            //     Math.round(this.pos[1]) == PENEXIT[1]) {
+            //     this.changeActorMode(ACTORMODE.ENTERING_PEN);//怪物进门
+            //     return;
+            // }
+            //break;
+
+
+            this.pos[0] = (fixedPosX >> FIXEDBIT);
+            this.pos[1] = (fixedPosY >> FIXEDBIT);
+            this.updateDir();
+        }
+        this.pos[0] = (fixedPosX / FIXEDCOEFF);
+        this.pos[1] = (fixedPosY / FIXEDCOEFF);
+        if (checkEaten) {
+            let oldPosX = (oldFixedPosX >> FIXEDBIT);
+            let newPosX = (fixedPosX >> FIXEDBIT);
+            if ((oldPosX >= PENEXIT[0] && newPosX <= PENEXIT[0]) ||
+                (newPosX >= PENEXIT[0] && oldPosX <= PENEXIT[0])) {
+                this.pos[0] = PENEXIT[0];
                 this.changeActorMode(ACTORMODE.ENTERING_PEN);//怪物进门
                 return;
             }
-            //break;
-            this.updateDir();
         }
     }
 
@@ -609,7 +629,8 @@ export default class Ghost {
             if (this.mode == ACTORMODE.EATEN) {
                 this.animIdx = 47 + Dir2Anim[this.dir];
             } else {
-                if (this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
+                if (this.outFrightMode==false && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
+                //if ((this.mode == ACTORMODE.FRIGHTENED || ((this.mode == ACTORMODE.LEAVING_PEN || this.mode == ACTORMODE.IN_PEN)&& this.leavedPen==false)) && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
                     this.animIdx = 32 + Math.floor(this.mainRef.frame / 3) % 2;
                     if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
                         this.animIdx += Math.floor(this.mainRef.frame / 12) % 2 * 2;

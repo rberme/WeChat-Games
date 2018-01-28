@@ -1,6 +1,7 @@
 import {
     ACTORINITIAL,
     BLOCKSIZE,
+    FRUITPOS,
 } from './GameRes'
 
 const pacmanAnim = [
@@ -12,7 +13,7 @@ const pacmanAnim = [
     54, 55, 56, 55,//pacman右大 //
 
     57, 59, 60, 61, 61, 62, 63,//stick /
-
+    72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,//die  27
 ];
 
 const Dir2Anim = {
@@ -37,20 +38,22 @@ export default class Player {
         this.requestDir = 0;
         this.animIdx = 3;
         this.speed = this.fullSpeed;
+        this.deltaDist = 0;
     }
 
     update() {
         var b = (this.pos[0] - halfBLOCKSIZE) / 8,
             c = (this.pos[1] - halfBLOCKSIZE) / 8,
             tilePos = [Math.round(b) * 8, Math.round(c) * 8];
-        if (tilePos[0]+halfBLOCKSIZE != this.tilePos[0] || tilePos[1]+halfBLOCKSIZE != this.tilePos[1]) {//移动到了新的块
-            this.tilePos[0] = tilePos[0]+halfBLOCKSIZE;
-            this.tilePos[1] = tilePos[1]+halfBLOCKSIZE
+        if (tilePos[0] + halfBLOCKSIZE != this.tilePos[0] || tilePos[1] + halfBLOCKSIZE != this.tilePos[1]) {//移动到了新的块
+            this.tilePos[0] = tilePos[0] + halfBLOCKSIZE;
+            this.tilePos[1] = tilePos[1] + halfBLOCKSIZE
 
-            if (this.mainRef.worldMap.playfield[tilePos[1]][tilePos[0]].dot){
+            if (this.mainRef.worldMap.playfield[tilePos[1]][tilePos[0]].dot) {
                 this.mainRef.dotEaten(this.id, tilePos);
                 this.speed = this.dotEatingSpeed;
-            }
+            } 
+
             else this.speed = this.fullSpeed;
             this.mainRef.tilesChanged = true;
         }
@@ -63,7 +66,8 @@ export default class Player {
 
 
     render(gameRes) {
-        gameRes.renderImage(pacmanAnim[this.animIdx], this.pos[0], this.pos[1] + this.mainRef.worldMap.playfieldY, 1, 1);
+        let animID = this.animIdx;
+        gameRes.renderImage(pacmanAnim[animID], this.pos[0], this.pos[1] + this.mainRef.worldMap.playfieldY, 1, 1);
     }
 
 }

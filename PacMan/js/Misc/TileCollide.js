@@ -285,6 +285,7 @@ export default class TileCollide {
 
         let preferDir = [this.player.requestDir, this.player.dir];
         let checkDir;
+        let deltaMove = false;
         for (let i = 0; i < preferDir.length; ++i) {
             if (i == 0 && preferDir[i] == 0)
                 continue;
@@ -312,6 +313,7 @@ export default class TileCollide {
                 tempDir_OffsetRange = tempData8[tempDir];
             }
 
+
             checkDir = tempDir;
             if ((finalDir & tempDir) == 0) {
                 if ((finalDir & tempDir2) == 0) {
@@ -324,6 +326,8 @@ export default class TileCollide {
                                 fixedLeftDist = 0;
                                 return [fixedCurPos, 0];
                             }
+                            else
+                                deltaMove = true;
                         }
                         else {
                             if (i == 0) continue;
@@ -340,6 +344,7 @@ export default class TileCollide {
             if (i == 0) {
                 this.player.dir = this.player.requestDir;
                 this.player.requestDir = 0;
+                //fixedLeftDist+=3686;
             }
             break;
         }
@@ -347,7 +352,14 @@ export default class TileCollide {
         deltaX = (deltaX == 0 && (checkDir & 0b00000111) > 0) ? fixedBlockWidth : deltaX;
         deltaY = (deltaY == 0 && (checkDir & 0b11000001) > 0) ? fixedBlockWidth : deltaY;
 
-        return this.CalcMaxDist(fixedCurPos, checkDir, deltaX, deltaY, fixedLeftDist);
+        if (deltaMove == false && this.player.deltaDist > 0){
+            fixedLeftDist += (this.player.deltaDist>>1);
+            this.player.deltaDist = 0;
+        }
+        let tempDist = this.CalcMaxDist(fixedCurPos, checkDir, deltaX, deltaY, fixedLeftDist);
+        if (deltaMove)
+            this.player.deltaDist += (fixedLeftDist - tempDist[1]);
+        return tempDist;
     }
 
 

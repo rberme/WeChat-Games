@@ -116,11 +116,22 @@ const ALTASRECT = {
     94: [22, 221, 16, 16],//400
     95: [42, 221, 16, 16],//800
     96: [62, 221, 16, 16],//1600
-
+    97: [82, 161, 16, 16],//pacman生命
     100: [256, 128, 64, 64],//insert coin
 
-}
+    101: [162, 1, 32, 23],//100
+    102: [162, 21, 32, 23],//300
+    103: [162, 41, 32, 23],//500
+    104: [162, 61, 32, 23],//700
+    105: [162, 81, 32, 23],//1000
+    106: [162, 101, 32, 23],//2000
+    107: [162, 121, 32, 23],//3000
+    108: [162, 141, 32, 23],//5000
 
+}
+const fruitIdxes = [
+    46, 86, 87, 88, 89, 90, 91, 92,
+];
 const y = 0.8 * 0.4
 export const PENROUTINEPOS = {//在围栏中来回移动的参考点
     1: [{//围栏中左边怪来回的点 (上下) 36-26->10  5+7->12
@@ -293,6 +304,7 @@ export const PENROUTINEPOS = {//在围栏中来回移动的参考点
     }]
 }
 export const PENEXIT = [112, 92];//围栏的出口
+export const FRUITPOS = [112, 140];//水果的位置
 export const TIMES = {//倒计时时间 秒
     0: 0.16,
     1: 0.23,
@@ -672,7 +684,200 @@ export const ACTORMODE = {
     ENTERING_PEN: 64,
     RE_LEAVING_FROM_PEN: 128,
 }
+export const CUTSCENE = {//cutscene
+    1: {
+        actors: [{
+            ghost: false,
+            x: 30,
+            y: 16
+        },
+        {
+            ghost: true,
+            x: 33.2,
+            y: 16
+        }],
+        sequence: [{
+            time: 5.5,
+            moves: [{
+                dir: 4,
+                speed: 0.75 * 0.8,
+                id: 99
+            },
+            {
+                dir: 4,
+                speed: 0.78 * 0.8,
+                id: 1
+            }]
+        },
+        {
+            time: 0.1,
+            moves: [{
+                dir: 4,
+                speed: 16
+            },
+            {
+                dir: 4,
+                speed: 0
+            }]
+        },
+        {
+            time: 9,
+            moves: [{
+                dir: 8,
+                speed: 0.75 * 0.8,// * 2,
+                id: 5,
+                //elId: "pcm-bpcm"
+            },
+            {
+                dir: 8,
+                speed: 0.4,//0.8,
+                id: 2
+            }]
+        }]
+    },
+    2: {
+        actors: [{
+            ghost: false,
+            x: 30,
+            y: 16
+        },
+        {
+            ghost: true,
+            x: 14.4,
+            y: 16.5
+        },
+        {
+            ghost: true,
+            x: 33.2,
+            y: 16
+        }
+        ],
+        sequence: [
+            {
+                time: 2.7,
+                moves: [{
+                    dir: 4,
+                    speed: 0.75 * 0.8,
+                    id: 99//pacman 左
+                },
+                {
+                    dir: 0,
+                    speed: 0,
+                    id: 3
+                },
+                {
+                    dir: 4,
+                    speed: 0.78 * 0.8,
+                    id: 1
+                }]
+            },
+            {
+                time: 1,
+                moves: [{
+                    dir: 4,
+                    speed: 0.75 * 0.8// * 2
+                },
+                {
+                    dir: 0,
+                    speed: 0,
+                    id: 4
+                },
+                {
+                    dir: 4,
+                    speed: 0.1 * 0.4,
+                    id: 23
 
+                }]
+            },
+            {
+                time: 1.3,
+                moves: [{
+                    dir: 4,
+                    speed: 0.75 * 0.8// * 2
+                },
+                {
+                    dir: 0,
+                    speed: 0,
+                    id: 7
+                },
+                {
+                    dir: 4,
+                    speed: 0
+                }]
+            },
+            {
+                time: 1,
+                moves: [{
+                    dir: 4,
+                    speed: 0.75 * 0.8// * 2
+                },
+                {
+                    dir: 0,
+                    speed: 0,
+                    id: 8
+                },
+                {
+                    dir: 4,
+                    speed: 0,
+                    id: 10
+                }]
+            },
+            {
+                time: 2.5,
+                moves: [{
+                    dir: 4,
+                    speed: 0.75 * 0.8// * 2
+                },
+                {
+                    dir: 0,
+                    speed: 0,
+                    id: 9
+                },
+                {
+                    dir: 4,
+                    speed: 0,
+                    id: 11
+                }]
+            }]
+    },
+    3: {
+        actors: [{
+            ghost: false,
+            x: 30,
+            y: 16
+        },
+        {
+            ghost: true,
+            x: 33.2,
+            y: 16
+        }],
+        sequence: [{
+            time: 5.3,
+            moves: [{
+                dir: 4,
+                speed: 0.75 * 0.8,
+                id: 99
+            },
+            {
+                dir: 4,
+                speed: 0.78 * 0.8,
+                id: 24
+            }]
+        },
+        {
+            time: 5.3,
+            moves: [{
+                dir: 4,
+                speed: 0
+            },
+            {
+                dir: 8,
+                speed: 0.78 * 0.8,
+                id: 25
+            }]
+        }]
+    }
+}
 export const GAMEMODE = {
     ORDINARY_PLAYING: 0,
     GHOST_DIED: 1,
@@ -1154,4 +1359,41 @@ export default class GameRes {
         )
     }
 
+    renderText(idx, x, y, size, data) {
+
+        this.ctx.font = size + "px Arial"
+        let str = "null";
+        if (idx == 1) {
+            this.ctx.fillStyle = "#ffffff"
+            str = "分数: " + data;
+        } else if (idx == 2) {//准备开始
+            str = "准备开始！";
+            this.ctx.fillStyle = "#ffff00"
+        } else if (idx == 3) {//游戏结束
+            str = "游戏结束";
+            this.ctx.fillStyle = "#ff0000"
+        } else if (idx == 4) {//点击开始
+            str = "点击开始";
+            this.ctx.fillStyle = "#ffffff"
+        } else if (idx == 5) {//生命
+            str = "吧唧: ";
+            for (let i = 0; i < data; ++i) {
+                this.renderImage(97, x + 35 + i * 16, y - 4, 1, 1);
+            }
+            this.ctx.fillStyle = "#ffffff"
+        } else if (idx == 6) {//水果
+            str = "点心: ";
+            for (let i = 0; i < data; ++i) {
+                this.renderImage(fruitIdxes[i], x + 35 + i * 16, y - 1, 1, 1);
+            }
+            this.ctx.fillStyle = "#ffffff"
+        } else if (idx == 7) {//级别
+            str = data + "级";
+            this.ctx.fillStyle = "#ffffff"
+        }
+        this.ctx.fillText(
+            str,
+            x * this.renderRate,
+            y * this.renderRate)
+    }
 }
