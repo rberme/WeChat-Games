@@ -457,6 +457,10 @@ export default class Main {
 
     finishFrightMode() {
         this.switchMainGhostMode(this.lastMainGhostMode, false)
+        for(var k in this.actors){
+            let actor = this.actors[k]
+            actor.renderMode = actor.mode;
+        }
     };
     dotEaten(b, c) {
         this.worldMap.dotsRemaining--;
@@ -660,8 +664,6 @@ export default class Main {
                     actor.eatenInThisFrightMode = false;
                     if (actor.mode != ACTORMODE.EATEN && actor.mode != ACTORMODE.ENTERING_PEN)
                         actor.renderMode = ACTORMODE.FRIGHTENED;
-                } else {
-                    actor.renderMode = actorMode;
                 }
                 if (actor.mode != ACTORMODE.EATEN &&
                     actor.mode != ACTORMODE.IN_PEN &&
