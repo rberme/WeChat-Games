@@ -659,6 +659,8 @@ export default class Main {
                     actor.eatenInThisFrightMode = false;
                     if (actor.mode != ACTORMODE.EATEN && actor.mode != ACTORMODE.ENTERING_PEN)
                         actor.renderMode = ACTORMODE.FRIGHTENED;
+                } else {
+                    actor.renderMode = actorMode;
                 }
                 if (actor.mode != ACTORMODE.EATEN &&
                     actor.mode != ACTORMODE.IN_PEN &&
