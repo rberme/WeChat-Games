@@ -98,7 +98,6 @@ export default class Ghost {
         this.targetPlayerId = 0;
         this.freeToLeavePen = false;
         this.eatenInThisFrightMode = false;
-        this.removeFrightMode = true;
 
         if (this.id == this.mainRef.playerCount) {
             this.animIdx = 0 + Dir2Anim[this.dir] * 2;
@@ -192,6 +191,10 @@ export default class Ghost {
     changeActorMode(newMode) {
         let oldMode = this.mode;
         this.mode = newMode;
+
+        if (newMode != ACTORMODE.FRIGHTENED) {
+            this.renderMode = newMode;
+        }
         if (this.id == this.mainRef.playerCount + 3 && (newMode == 16 || oldMode == 16))
             this.mainRef.updateCruiseElroySpeed();
         switch (oldMode) {
@@ -225,7 +228,6 @@ export default class Ghost {
                 this.tunnelSpeed = this.fullSpeed = 1.6;
                 this.targetPos = [PENEXIT[0], PENEXIT[1]];
                 this.freeToLeavePen = this.followingRoutine = false;
-                this.removeFrightMode = true;
                 break;
             case ACTORMODE.IN_PEN:
                 this.targetPlayerId = 0;
@@ -629,7 +631,7 @@ export default class Ghost {
             if (this.mode == ACTORMODE.EATEN) {
                 this.animIdx = 47 + Dir2Anim[this.dir];
             } else {
-                if (this.removeFrightMode == false && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
+                if (this.renderMode == ACTORMODE.FRIGHTENED) {//this.mainRef.frightModeTime) {
                     //if ((this.mode == ACTORMODE.FRIGHTENED || ((this.mode == ACTORMODE.LEAVING_PEN || this.mode == ACTORMODE.IN_PEN)&& this.leavedPen==false)) && this.mainRef.frightModeTime) {//this.mainRef.frightModeTime) {
                     this.animIdx = 32 + Math.floor(this.mainRef.frame / 3) % 2;
                     if (this.mainRef.frightModeTime < this.mainRef.levels.frightTotalTime - this.mainRef.levels.frightTime)
