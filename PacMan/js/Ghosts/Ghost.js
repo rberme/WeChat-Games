@@ -98,6 +98,7 @@ export default class Ghost {
         this.targetPlayerId = 0;
         this.freeToLeavePen = false;
         this.eatenInThisFrightMode = false;
+        this.renderMode = ACTORMODE.NONE;
 
         if (this.id == this.mainRef.playerCount) {
             this.animIdx = 0 + Dir2Anim[this.dir] * 2;
