@@ -450,6 +450,7 @@ export default class Main {
         this.ghostBeingEatenId = b;
         this.playerEatingGhostId = c;
         this.changeGameplayMode(GAMEMODE.GHOST_DIED)
+        this.actors[b].renderMode = ACTORMODE.EATEN;
     };
 
 

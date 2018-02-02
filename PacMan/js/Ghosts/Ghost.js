@@ -191,10 +191,6 @@ export default class Ghost {
     changeActorMode(newMode) {
         let oldMode = this.mode;
         this.mode = newMode;
-
-        if (newMode != ACTORMODE.FRIGHTENED) {
-            this.renderMode = newMode;
-        }
         if (this.id == this.mainRef.playerCount + 3 && (newMode == 16 || oldMode == 16))
             this.mainRef.updateCruiseElroySpeed();
         switch (oldMode) {
