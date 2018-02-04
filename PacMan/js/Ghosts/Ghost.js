@@ -311,7 +311,8 @@ export default class Ghost {
             this.reverseDirectionsNext = false;
         }
         moveDistance = Math.round(moveDistance * FIXEDCOEFF);
-        if (this.mode == ACTORMODE.EATEN) moveDistance = (moveDistance << 1);
+        if (this.mode == ACTORMODE.EATEN)
+            moveDistance = (moveDistance << 1);
         mapWidth = Math.round(mapWidth << FIXEDBIT);
         let fixedPosX = Math.round(this.pos[0] * FIXEDCOEFF);
         let fixedPosY = Math.round(this.pos[1] * FIXEDCOEFF);
@@ -500,7 +501,8 @@ export default class Ghost {
             // }
             //break;
 
-
+            if (fixedPosX < 0)
+                continue;
             this.pos[0] = (fixedPosX >> FIXEDBIT);
             this.pos[1] = (fixedPosY >> FIXEDBIT);
             this.updateDir();
@@ -528,7 +530,7 @@ export default class Ghost {
                 case ACTORMODE.CHASE:
                 case ACTORMODE.EATEN:
                     if ((this.dir & field.allowedDir) == 0 && field.allowedDir == oppositeDirections[this.dir]) //死路 需要回头
-                        this.nextDir = oppositeDirections[this.dir];
+                        this.dir = oppositeDirections[this.dir];
                     else {
                         let minDist = 99999999999;
                         let bestDir = 0;
