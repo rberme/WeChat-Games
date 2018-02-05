@@ -319,7 +319,7 @@ export default class Ghost {
         let checkEaten = (this.mode == ACTORMODE.EATEN && fixedPosY == (PENEXIT[1] << FIXEDBIT))
         let oldFixedPosX = fixedPosX;
         while (moveDistance > 0) {
-            let blockXX = (fixedPosX < 0 ? (fixedPosX + fixedBLOCKSIZE >> 4) : fixedPosX) % fixedBLOCKSIZE;
+            let blockXX = (fixedPosX < 0 ? (fixedPosX + fixedBLOCKSIZE * 4) : fixedPosX) % fixedBLOCKSIZE;
             let blockYY = fixedPosY % fixedBLOCKSIZE;
             if (blockXX != fixedHalfBLOCKSIZE) {//横向
                 if (blockXX < fixedHalfBLOCKSIZE) {//在左半边
@@ -501,10 +501,11 @@ export default class Ghost {
             // }
             //break;
 
-            if (fixedPosX < 0)
-                continue;
             this.pos[0] = (fixedPosX >> FIXEDBIT);
             this.pos[1] = (fixedPosY >> FIXEDBIT);
+            // if (this.mode == ACTORMODE.EATEN){
+            //     console.log("被吃");
+            // }
             this.updateDir();
         }
         this.pos[0] = (fixedPosX / FIXEDCOEFF);
