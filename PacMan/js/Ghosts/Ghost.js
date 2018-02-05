@@ -319,7 +319,7 @@ export default class Ghost {
         let checkEaten = (this.mode == ACTORMODE.EATEN && fixedPosY == (PENEXIT[1] << FIXEDBIT))
         let oldFixedPosX = fixedPosX;
         while (moveDistance > 0) {
-            let blockXX = (fixedPosX < 0 ? (fixedPosX + fixedBLOCKSIZE * 4) : fixedPosX) % fixedBLOCKSIZE;
+            let blockXX = (fixedPosX < 0 ? (fixedPosX + (fixedBLOCKSIZE << 2)) : fixedPosX) % fixedBLOCKSIZE;
             let blockYY = fixedPosY % fixedBLOCKSIZE;
             if (blockXX != fixedHalfBLOCKSIZE) {//横向
                 if (blockXX < fixedHalfBLOCKSIZE) {//在左半边
