@@ -42,9 +42,14 @@ export default class Player {
     }
 
     update() {
-        var b = (this.pos[0] - halfBLOCKSIZE) / 8,
-            c = (this.pos[1] - halfBLOCKSIZE) / 8,
-            tilePos = [Math.round(b) * 8, Math.round(c) * 8];
+        // var b = (this.pos[0] - halfBLOCKSIZE) / 8,
+        //     c = (this.pos[1] - halfBLOCKSIZE) / 8,
+        //     tilePos = [Math.round(b) * 8, Math.round(c) * 8];
+
+        var b = this.pos[0] - (this.pos[0] + (BLOCKSIZE << 2)) % BLOCKSIZE;
+        var c = this.pos[1] - (this.pos[1] + (BLOCKSIZE << 2)) % BLOCKSIZE;
+        var tilePos = [Math.round(b), Math.round(c)];
+
         if (tilePos[0] + halfBLOCKSIZE != this.tilePos[0] || tilePos[1] + halfBLOCKSIZE != this.tilePos[1]) {//移动到了新的块
             this.tilePos[0] = tilePos[0] + halfBLOCKSIZE;
             this.tilePos[1] = tilePos[1] + halfBLOCKSIZE

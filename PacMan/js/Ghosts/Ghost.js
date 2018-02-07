@@ -87,7 +87,6 @@ export default class Ghost {
         this.pos[0] = init.x * BLOCKSIZE + halfBLOCKSIZE;
         this.pos[1] = init.y * BLOCKSIZE + halfBLOCKSIZE;
         this.tilePos = [this.pos[0], this.pos[1]];
-
         this.targetPos = [init.scatterX * BLOCKSIZE + halfBLOCKSIZE, init.scatterY * BLOCKSIZE + halfBLOCKSIZE];
         this.scatterPos = [init.scatterX * BLOCKSIZE + halfBLOCKSIZE, init.scatterY * BLOCKSIZE + halfBLOCKSIZE];
 
@@ -617,9 +616,14 @@ export default class Ghost {
             //this.step();
             this.move();
             if (this.mode == ACTORMODE.CHASE || this.mode == ACTORMODE.SCATTER || this.mode == ACTORMODE.FRIGHTENED) {
-                var b = (this.pos[0] - halfBLOCKSIZE) / 8,
-                    c = (this.pos[1] - halfBLOCKSIZE) / 8,
-                    tilePos = [Math.round(b) * 8 + halfBLOCKSIZE, Math.round(c) * 8 + halfBLOCKSIZE];
+                // var b = (this.pos[0] - halfBLOCKSIZE) / 8
+                //     c = (this.pos[1] - halfBLOCKSIZE) / 8
+                // var tilePos = [Math.round(b) * 8 + halfBLOCKSIZE, Math.round(c) * 8 + halfBLOCKSIZE];
+
+                var b = this.pos[0]-(this.pos[0]+(BLOCKSIZE<<2))%BLOCKSIZE;
+                var c = this.pos[1]-(this.pos[1]+(BLOCKSIZE<<2))%BLOCKSIZE;
+
+                var tilePos = [Math.round(b) + halfBLOCKSIZE, Math.round(c) + halfBLOCKSIZE];
 
                 if (tilePos[0] != this.tilePos[0] || tilePos[1] != this.tilePos[1]) {//移动到了新的块
                     this.tilePos[0] = tilePos[0];
