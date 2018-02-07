@@ -87,6 +87,7 @@ export default class Ghost {
         this.pos[0] = init.x * BLOCKSIZE + halfBLOCKSIZE;
         this.pos[1] = init.y * BLOCKSIZE + halfBLOCKSIZE;
         this.tilePos = [this.pos[0], this.pos[1]];
+
         this.targetPos = [init.scatterX * BLOCKSIZE + halfBLOCKSIZE, init.scatterY * BLOCKSIZE + halfBLOCKSIZE];
         this.scatterPos = [init.scatterX * BLOCKSIZE + halfBLOCKSIZE, init.scatterY * BLOCKSIZE + halfBLOCKSIZE];
 
@@ -619,6 +620,7 @@ export default class Ghost {
                 var b = (this.pos[0] - halfBLOCKSIZE) / 8,
                     c = (this.pos[1] - halfBLOCKSIZE) / 8,
                     tilePos = [Math.round(b) * 8 + halfBLOCKSIZE, Math.round(c) * 8 + halfBLOCKSIZE];
+
                 if (tilePos[0] != this.tilePos[0] || tilePos[1] != this.tilePos[1]) {//移动到了新的块
                     this.tilePos[0] = tilePos[0];
                     this.tilePos[1] = tilePos[1];
