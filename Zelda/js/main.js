@@ -33,7 +33,8 @@ export default class Main {
      */
     render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
-
+        // ctx.fillStyle = "black";
+        // ctx.fillRect(0, 50, canvas.width, canvas.width/9*11);
     }
 
     // 游戏逻辑更新主函数
