@@ -20,7 +20,7 @@ export default class World {
 
     CreateShips() {
         this.ships = [];
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 30; i++) {
             let ship = new Spaceship([rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 100 * Utils.MULTI, rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 188 * Utils.MULTI]);
             this.ships.push(ship);
             ship.target = [rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 600 * Utils.MULTI, rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 188 * Utils.MULTI];

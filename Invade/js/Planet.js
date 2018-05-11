@@ -7,7 +7,7 @@ export default class Planet {
     constructor(center, radius) {
         this.radius = radius;
         this.center = center;
-        this.checkDist = Utils.Div(this.radius, 3);
+        this.checkDist = Utils.Div(this.radius, 2);
     }
 
     FilterDir(pos, dir) {
