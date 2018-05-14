@@ -13,10 +13,48 @@ export default class Main {
     constructor() {
         // 维护当前requestAnimationFrame的id
         this.aniId = 0
+
+        wx.onTouchStart(this.onTouchStartEventHandler.bind(this));
+        wx.onTouchMove(this.onTouchMoveEventHandler.bind(this));
+        wx.onTouchEnd(this.onTouchEndEventHandler.bind(this));
+        wx.onTouchCancel(this.onTouchCancelEventHandler.bind(this));
+
         this.world = new World();
         this.restart()
     }
 
+    onTouchStartEventHandler(e) {
+        //e.type == PlatformDifference[this.platform].touchstart
+        this.touchStartX = e.touches[0].clientX
+        this.touchStartY = e.touches[0].clientY
+        this.touchMode = 0;
+
+    }
+
+    onTouchMoveEventHandler(e) {
+        if (this.touchMode == 0) {
+            this.touchMode = 2;
+            //this.joyStick.StartCapture(e.touches[0].clientX, e.touches[0].clientY);
+            this.joyStick.SetPosition(e.touches[0].clientX, e.touches[0].clientY)
+        }
+        //this.joyStick.KeepCapture(e.touches[0].clientX, e.touches[0].clientY);
+        this.joyStick.SetHandlePosition(e.touches[0].clientX, e.touches[0].clientY)
+    }
+
+    onTouchEndEventHandler(e) {
+        if (this.touchMode == 0) {
+            //点击(未滑动)
+        }
+        this.touchMode = 0;
+        //this.joyStick.StopCapture();
+
+    }
+
+    onTouchCancelEventHandler(e) {
+        this.onTouchEndEventHandler(e);
+    }
+
+    
     restart() {
 
         this.bindLoop = this.loop.bind(this)

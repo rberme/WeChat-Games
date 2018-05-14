@@ -4,10 +4,11 @@ import Utils from "./Utils"
 
 
 export default class Planet {
-    constructor(center, radius) {
+    constructor(center, radius, id) {
         this.radius = radius;
         this.center = center;
         this.checkDist = Utils.Div(this.radius, 2);
+        this.id = id;
     }
 
     FilterDir(pos, dir) {
