@@ -21,7 +21,7 @@ Utils.Length = function (vec1, vec2) {
 
 //https://en.wikipedia.org/wiki/Integer_square_root
 Utils.Sqrt1 = function (num) {
-    if (num < 0)
+    if (num <= 0)
         return 0;
     else if (num < 2)
         return num;

@@ -5,7 +5,7 @@ export default class Random {
     constructor() {
         if (instance)
             return instance;
-        this.seed(49734321);
+        this.SetSeed(49734321);
         instance = this;
 
     }
@@ -17,7 +17,7 @@ export default class Random {
         return (this.randSeed = x % t32) / t32;
     };
 
-    seed(b) {
+    SetSeed(b) {
         this.seed = b
     };
 
@@ -31,12 +31,12 @@ export default class Random {
     }
 
     Next() {
-        this.seed = ((this.seed + 0x7ed55d16) + (seed << 12)) & 0xffffffff;
-        this.seed = ((this.seed ^ 0xc761c23c) ^ (seed >>> 19)) & 0xffffffff;
-        this.seed = ((this.seed + 0x165667b1) + (seed << 5)) & 0xffffffff;
-        this.seed = ((this.seed + 0xd3a2646c) ^ (seed << 9)) & 0xffffffff;
-        this.seed = ((this.seed + 0xfd7046c5) + (seed << 3)) & 0xffffffff;
-        this.seed = ((this.seed ^ 0xb55a4f09) ^ (seed >>> 16)) & 0xffffffff;
-        return (seed & 0xfffffff) / 0x10000000;
+        this.seed = ((this.seed + 0x7ed55d16) + (this.seed << 12)) & 0xffffffff;
+        this.seed = ((this.seed ^ 0xc761c23c) ^ (this.seed >>> 19)) & 0xffffffff;
+        this.seed = ((this.seed + 0x165667b1) + (this.seed << 5)) & 0xffffffff;
+        this.seed = ((this.seed + 0xd3a2646c) ^ (this.seed << 9)) & 0xffffffff;
+        this.seed = ((this.seed + 0xfd7046c5) + (this.seed << 3)) & 0xffffffff;
+        this.seed = ((this.seed ^ 0xb55a4f09) ^ (this.seed >>> 16)) & 0xffffffff;
+        return (this.seed & 0xfffffff) // / 0x10000000;
     }
 }

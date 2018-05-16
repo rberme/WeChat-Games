@@ -41,4 +41,13 @@ export default class GameRes {
         this.ctx.fill();
     }
 
+    DrawLine(start, end,color = "gray") {
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.moveTo(start[0] / Utils.MULTI, start[1] / Utils.MULTI);
+        this.ctx.lineTo(end[0] / Utils.MULTI, end[1] / Utils.MULTI);
+        this.ctx.stroke();
+        //this.ctx.endPath();
+    }
+
 }

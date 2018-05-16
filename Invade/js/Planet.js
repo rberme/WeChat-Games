@@ -14,6 +14,7 @@ export default class Planet {
     FilterDir(pos, dir) {
         dir = Utils.Normalize(dir);
         let touchDist = Utils.Length(this.center, pos) - this.radius;
+        touchDist = (touchDist < 0 ? 0 : touchDist);
         let toCenterDir = Utils.Normalize([this.center[0] - pos[0], this.center[1] - pos[1]]);
         let centerComponent = this.Cos(dir, toCenterDir);
         if (centerComponent > 0 && touchDist < this.checkDist) {

@@ -5,6 +5,9 @@ import (
 	"net/http"
 )
 
+type clients struct {
+}
+
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL)
 	if r.URL.Path != "/" {
@@ -21,11 +24,11 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 func main() {
 	hub := newHub()
 	go hub.run()
-	http.HandleFunc("/", serveHome)
+	//http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
 	})
-	err := http.ListenAndServe("localhost:8338", nil)
+	err := http.ListenAndServe("192.168.0.189:8338", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
