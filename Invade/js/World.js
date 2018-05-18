@@ -16,7 +16,7 @@ export default class World {
         this.waitShips = [];
         this.flyShips = [];
 
-        this.cmdEmu = []
+        this.cmdEmu = [[1, 1, 7]]
 
         this.quadTree = new QuadTree([0, 0, screenWidth << Utils.MULTI, screenHeight << Utils.MULTI]);
 

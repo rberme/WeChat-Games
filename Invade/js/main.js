@@ -162,7 +162,7 @@ export default class Main {
         //     this.world.MoveOne();
         // }
         this.frame++
-        if (this.frame % 4 == 0)
+        if (this.frame % 4 == 0)// && this.frame < 80)
             this.update(4)
         this.render()
 
