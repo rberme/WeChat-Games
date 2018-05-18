@@ -45,33 +45,57 @@ export default class Main {
     }
 
     Init() {
+        this.touchPoses = [-1, -1, -1, -1, -1];
+        //this.touchValid = [false, false, false, false, false]
+        this.touchCurrPoses = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
         wx.onTouchStart(this.onTouchStartEventHandler.bind(this));
         wx.onTouchMove(this.onTouchMoveEventHandler.bind(this));
         wx.onTouchEnd(this.onTouchEndEventHandler.bind(this));
         wx.onTouchCancel(this.onTouchCancelEventHandler.bind(this));
 
         this.frame = 0;
-        this.world = new World();
+        this.world = new World(canvas.width, canvas.height);
         this.restart()
 
+
+        this.world.CreatePlanets(0, [{ id: 1, color: "blue" }]);
     }
+
+
 
     onTouchStartEventHandler(e) {
         //e.type == PlatformDifference[this.platform].touchstart
-        this.touchStartX = e.touches[0].clientX
-        this.touchStartY = e.touches[0].clientY
 
-        this.world.MoveStart(this.touchStartX, this.touchStartY);
+        let x = e.touches[0].clientX << Utils.MULTI
+        let y = e.touches[0].clientY << Utils.MULTI
+        this.touchCurrPoses[0][0] = x;
+        this.touchCurrPoses[0][1] = y;
+
+        this.touchPoses[0] = this.world.ConvertToPlanetPos(1, [x, y]);
+        //this.startIdx = this.world.MoveStart(this.touchPoses[0]);
     }
 
     onTouchMoveEventHandler(e) {
-        this.touchStartX = e.touches[0].clientX
-        this.touchStartY = e.touches[0].clientY
-        this.world.Moving(this.touchStartX, this.touchStartY);
+        if (this.touchPoses[0] >= 0) {
+            this.touchCurrPoses[0][0] = e.touches[0].clientX << Utils.MULTI
+            this.touchCurrPoses[0][1] = e.touches[0].clientY << Utils.MULTI
+
+            let temp = this.world.ConvertToPlanetPos(-1, this.touchCurrPoses[0]);
+            if (temp >= 0 && temp != this.touchPoses[0]) {
+                this.touchCurrPoses[0][0] = -1;
+                this.touchCurrPoses[0][1] = temp;
+            }
+        }
     }
 
     onTouchEndEventHandler(e) {
-        this.world.MoveOne();
+
+        this.touchPoses[0] = -1;
+
+
+
+        //this.startIdx = -1;
+        //this.world.MoveOne();
         // if (this.world.startIdx >= 0 && this.world.endIdx >= 0) {
         //     wx.sendSocketMessage({
         //         data: this.world.startIdx + "," + this.world.endIdx,
@@ -109,6 +133,19 @@ export default class Main {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height)
         this.world.Draw(gameRes);
+
+        // if (this.startIdx >= 0) {
+        //     let fingerPos = [this.touchPoses[0][0] << Utils.MULTI, this.touchPoses[0][1] << Utils.MULTI];
+        //     gameRes.DrawLine(this.world.planets[this.startIdx].center, this.endIdx >= 0 ? this.world.planets[this.endIdx].center : fingerPos);
+        // }
+
+
+        for (let i = 0; i < this.touchPoses.length; ++i) {
+            if (this.touchPoses[i] >= 0) {
+                gameRes.DrawLine(this.world.planets[this.touchPoses[i]].center,
+                    this.touchCurrPoses[i][0] < 0 ? this.world.planets[this.touchCurrPoses[i][1]].center : this.touchCurrPoses[i]);
+            }
+        }
     }
 
     // 游戏逻辑更新主函数

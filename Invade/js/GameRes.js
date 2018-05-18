@@ -15,12 +15,13 @@ export default class GameRes {
         this.CamX = this.CamY = 0;
     }
 
+    RenderText(str, pos, size, color) {
+        let x = (pos[0] - this.CamX) / Utils.MULTIV;
+        let y = (pos[1] - this.CamY) / Utils.MULTIV;
 
-
-    RenderText(str, x, y, size) {
-        x = (x - this.CamX) / Utils.MULTI;
-        y = (y - this.CamY) / Utils.MULTI;
-
+        this.ctx.textAlign = 'center'
+        this.ctx.textBaseline = 'middle'
+        this.ctx.fillStyle = color;
         this.ctx.font = size + "px Arial"
         this.ctx.fillText(
             str,
@@ -35,19 +36,31 @@ export default class GameRes {
         var endAngleInRadians = 2 * Math.PI;
 
         this.ctx.beginPath();
-        this.ctx.arc(center[0] / Utils.MULTI, center[1] / Utils.MULTI, radius / Utils.MULTI, startAngleInRadians, endAngleInRadians);
+        this.ctx.arc(center[0] / Utils.MULTIV, center[1] / Utils.MULTIV, radius / Utils.MULTIV, startAngleInRadians, endAngleInRadians);
 
         this.ctx.stroke();
         this.ctx.fill();
     }
 
-    DrawLine(start, end,color = "gray") {
+    DrawLine(start, end, color = "gray") {
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
-        this.ctx.moveTo(start[0] / Utils.MULTI, start[1] / Utils.MULTI);
-        this.ctx.lineTo(end[0] / Utils.MULTI, end[1] / Utils.MULTI);
+        this.ctx.moveTo(start[0] / Utils.MULTIV, start[1] / Utils.MULTIV);
+        this.ctx.lineTo(end[0] / Utils.MULTIV, end[1] / Utils.MULTIV);
         this.ctx.stroke();
         //this.ctx.endPath();
     }
+
+    DrawRect(rect, color = "red") {
+        this.ctx.fillStyle = color;
+        this.ctx.strokeRect(
+            rect[0] / Utils.MULTIV,
+            rect[1] / Utils.MULTIV,
+            rect[2] / Utils.MULTIV,
+            rect[3] / Utils.MULTIV
+        )
+    }
+
+
 
 }

@@ -2,45 +2,86 @@ import Planet from "./Planet"
 import Spaceship from "./Spaceship"
 import Random from "./Random"
 import Utils from "./Utils"
-
-
+import { DATA } from "./Data/Maps"
+import QuadTree from "./QuadTree"
 
 
 let rand = new Random();
 
 export default class World {
-    constructor() {
-        this.CreatePlanets();
+    constructor(screenWidth, screenHeight) {
+        //this.CreatePlanets(players);
         this.CreateShips();
-        this.startIdx = this.endIdx = -1;
         this.fingerPos = [0, 0];
         this.waitShips = [];
         this.flyShips = [];
+
+        this.cmdEmu = []
+
+        this.quadTree = new QuadTree([0, 0, screenWidth << Utils.MULTI, screenHeight << Utils.MULTI]);
+
     }
 
-    CreatePlanets() {
+    CreatePlanets(mapId, players) {
         this.planets = [];
-        this.planets.push(new Planet([80 * Utils.MULTI, 111 * Utils.MULTI], 50 * Utils.MULTI, 0))
-        this.planets.push(new Planet([80 * Utils.MULTI, 333 * Utils.MULTI], 60 * Utils.MULTI, 1))
-        this.planets.push(new Planet([80 * Utils.MULTI, 600 * Utils.MULTI], 40 * Utils.MULTI, 2))
-        this.planets.push(new Planet([188 * Utils.MULTI, 180 * Utils.MULTI], 50 * Utils.MULTI, 3))
-        this.planets.push(new Planet([188 * Utils.MULTI, 500 * Utils.MULTI], 80 * Utils.MULTI, 4))
-        this.planets.push(new Planet([300 * Utils.MULTI, 120 * Utils.MULTI], 60 * Utils.MULTI, 5))
-        this.planets.push(new Planet([280 * Utils.MULTI, 333 * Utils.MULTI], 70 * Utils.MULTI, 6))
-        this.planets.push(new Planet([320 * Utils.MULTI, 600 * Utils.MULTI], 50 * Utils.MULTI, 7))
-        // this.planets[8] = new Planet([333 * Utils.MULTI, 188 * Utils.MULTI], 80 * Utils.MULTI)
+        let mapData = DATA.MAPS[mapId];
+        for (let i in mapData.Planets) {
+            let p = mapData.Planets[i];
+            let pl = new Planet([p.center[0] << Utils.MULTI, p.center[1] << Utils.MULTI], p.radius << Utils.MULTI, i, p.start)
+            pl.maxHuman = p.max;
+            pl.grow = p.grow;
+            this.planets.push(pl)
+            this.quadTree.insert(pl);
+        }
+        for (let i in players) {
+            let p = players[i];
+            let pp = this.planets[mapData.Players[i]]
+            pp.owner = p.id;
+            pp.color = p.color;
+        }
     }
 
     CreateShips() {
         this.ships = [];
-        for (let i = 0; i < 100; i++) {
-            let ship = new Spaceship([rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 100 * Utils.MULTI, rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 188 * Utils.MULTI]);
+        for (let i = 0; i < 300; i++) {
+            let ship = new Spaceship([0, 0]);
             this.ships.push(ship);
-            ship.target = [rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 600 * Utils.MULTI, rand.Range(-50 * Utils.MULTI, 50 * Utils.MULTI) + 188 * Utils.MULTI];
+            ship.target = [0, 0];
         }
     }
 
     Update(frame) {
+
+
+        for (let i in this.cmdEmu) {
+            let cmd = this.cmdEmu[i];
+            let userId = cmd[0];
+            let startIdx = cmd[1];
+            let endIdx = cmd[2];
+            let startPlanet = this.planets[startIdx];
+            if (userId != startPlanet.id)
+                continue;
+            let humans = startPlanet.Launch()
+            while (humans > 0) {
+                if (humans >= Utils.SHIPHUMANS) {
+                    this.ShipLaunch(startIdx, endIdx, Utils.SHIPHUMANS);
+                    humans -= Utils.SHIPHUMANS;
+                } else {
+                    this.ShipLaunch(startIdx, endIdx, humans);
+                    humans = 0;
+                }
+            }
+        }
+        this.cmdEmu = [];
+
+
+
+        for (let i in this.planets) {
+            let planet = this.planets[i];
+            planet.Update(frame);
+        }
+
+
         for (let i = 0; i < frame; ++i) {
             if (this.waitShips.length > 0) {
                 this.flyShips.push(this.waitShips.shift());
@@ -51,17 +92,24 @@ export default class World {
         for (let i = this.flyShips.length - 1; i >= 0; i--) {
             let ship = this.flyShips[i];
             ship.ResetDir();
-            for (let j in this.planets) {
-                if (ship.startIdx != j && ship.endIdx != j) {
-                    ship.Dir = this.planets[j].FilterDir(ship.pos, ship.Dir);
+            let mayTouchPlanets = this.quadTree.retrieve(ship);
+            //console.log(mayTouchPlanets.length);
+            ship.Dir = Utils.Normalize(ship.Dir);
+            for (let j in mayTouchPlanets) {
+                let pl = mayTouchPlanets[j];
+                if (ship.startIdx != pl.id && ship.endIdx != pl.id) {
+                    ship.Dir = pl.FilterDir(ship.pos, ship.Dir);
                 }
             }
 
             if (ship.Update(frame) == false) {
+                this.planets[ship.endIdx].Invade(ship, ship.humans);
                 this.ships.push(ship);
                 this.flyShips.splice(i, 1);
             }
         }
+
+
     }
 
     Draw(gameRes) {
@@ -70,93 +118,55 @@ export default class World {
             this.planets[i].Draw(gameRes);
         }
 
+
+
         for (let i = this.flyShips.length - 1; i >= 0; i--) {
             let ship = this.flyShips[i];
-            // if (ship.Draw(gameRes) == false) {
-            //     this.ships.push(ship);
-            //     this.flyShips.splice(i, 1);
-            //     continue;
-            // }
             ship.Draw(gameRes);
         }
 
-        // for (let i in this.flyShips) {
-        //     
-        // }
-
-        if (this.startIdx >= 0) {
-            gameRes.DrawLine(this.planets[this.startIdx].center, this.endIdx >= 0 ? this.planets[this.endIdx].center : this.fingerPos);
-        }
-    }
-    // Move() {
-    //     for (i = 0; i < arguments.length; i++) {
-
-    //     }
-    // }
-
-
-    MoveStart(x, y) {
-        for (let i in this.planets) {
-            let planet = this.planets[i];
-            let dx = (x * Utils.MULTI) - planet.center[0];
-            let dy = (y * Utils.MULTI) - planet.center[1];
-            if ((dx * dx + dy * dy) < planet.radius * planet.radius) {
-                this.fingerPos[0] = planet.center;
-
-                this.startIdx = i;
-                return;
-            }
-        }
-
+        this.quadTree.Render(gameRes);
     }
 
-    Moving(x, y) {
-        if (this.startIdx < 0)
+
+
+
+
+    ShipLaunch(startIdx, endIdx, humans) {
+        let ship = this.ships.pop();
+        if (ship == null)
             return;
-        this.fingerPos[0] = x * Utils.MULTI;
-        this.fingerPos[1] = y * Utils.MULTI;
-        this.endIdx = -1;
-        for (let i in this.planets) {
-            if (i == this.startIdx)
+        let planet = this.planets[startIdx];
+        ship.pos[0] = planet.center[0] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
+        ship.pos[1] = planet.center[1] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
+        ship.rect[0] = ship.pos[0] - ship.size;
+        ship.rect[1] = ship.pos[1] - ship.size;
+
+        ship.active = true;
+        ship.ResetInfo(planet, humans);
+
+        planet = this.planets[endIdx];
+        ship.target[0] = planet.center[0] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
+        ship.target[1] = planet.center[1] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
+        ship.startIdx = startIdx;
+        ship.endIdx = endIdx;
+
+        this.waitShips.push(ship);
+    }
+
+
+    ConvertToPlanetPos(owner = -1, pos) {
+        for (let i = 0; i < this.planets.length; ++i) {
+            let planet = this.planets[i];
+            let deltaX = (pos[0]) - planet.center[0];
+            let deltaY = (pos[1]) - planet.center[1];
+            if (owner >= 0 && owner != planet.owner)
                 continue;
-            let planet = this.planets[i];
-            let dx = (x * Utils.MULTI) - planet.center[0];
-            let dy = (y * Utils.MULTI) - planet.center[1];
-            if ((dx * dx + dy * dy) < planet.radius * planet.radius) {
-                this.endIdx = i;
-                return;
+            if (deltaX * deltaX + deltaY * deltaY <= planet.radius * planet.radius) {
+                return planet.id;
             }
         }
-    }
-
-
-    MoveOne() {
-        if (this.endIdx < 0) {
-            this.startIdx = -1;
-            return;
-        }
-        let count = 30;
-        for (let i = 0; i < count; ++i) {
-            let ship = this.ships.pop();
-            if (ship == null)
-                break;
-            let planet = this.planets[this.startIdx];
-            ship.pos[0] = planet.center[0] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
-            ship.pos[1] = planet.center[1] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
-
-            planet = this.planets[this.endIdx];
-            ship.target[0] = planet.center[0] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
-            ship.target[1] = planet.center[1] + rand.Range(-planet.radius >> 1, planet.radius >> 1);
-            ship.startIdx = this.startIdx;
-            ship.endIdx = this.endIdx;
-
-            ship.active = true;
-
-            this.waitShips.push(ship);
-
-
-        }
-        this.startIdx = this.endIdx = -1;
+        return -1;
     }
 
 

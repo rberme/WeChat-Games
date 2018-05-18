@@ -4,12 +4,19 @@ export default class Utils {
 
 }
 
-Utils.MULTI = 512;
+Utils.MULTI = 8;
+Utils.MULTIV = 256;
+Utils.SHIPHUMANS = 5;
 
 Utils.Normalize = function (vec) {
-    let len = Utils.Sqrt1(vec[0] * vec[0] + vec[1] * vec[1]) / Utils.MULTI;
-    let x = Math.round(vec[0] / len);
-    let y = Math.round(vec[1] / len);
+    let lenMulti = Utils.Sqrt1(vec[0] * vec[0] + vec[1] * vec[1]);
+    let x = Utils.Div(vec[0] << Utils.MULTI, lenMulti);
+    let y = Utils.Div(vec[1] << Utils.MULTI, lenMulti);
+
+    // let lenMultiSquare = vec[0] * vec[0] + vec[1] * vec[1];
+    // let xx = Utils.Div(vec[0] << Utils.MULTI, lenMulti);
+    // let yy = Utils.Div(vec[1] << Utils.MULTI, lenMulti);
+
     return [x, y];
 }
 
@@ -77,13 +84,3 @@ Utils.Clamp = function (num, min, max) {
     return num;
 }
 
-
-
-// Utils.Angle = function (vec1, vec2) {
-//     vec1 = Utils.Normalize(vec1);
-//     vec2 = Utils.Normalize(vec2);
-//     dot = Utils.Clamp(Utils.Dot(vec1, vec2), -Utils.MULTI,Utils.MULTI);
-//     if (dot == 1) return 0;
-//     else if (dot == -1) return 180;
-//     return Math
-// }

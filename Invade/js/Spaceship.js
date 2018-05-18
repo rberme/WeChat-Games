@@ -3,7 +3,7 @@ import Utils from "./Utils"
 export default class Spaceship {
     constructor(pos) {
         this.pos = pos;
-        this.Dir = [Utils.MULTI, 0];
+        this.Dir = [Utils.MULTIV, 0];
         this.speed = 3;
         this.target = null;
         this.active = false;
@@ -16,6 +16,18 @@ export default class Spaceship {
         this.maxFrame = 0;
         this.currFrame = 0;
 
+        this.size = (5 << Utils.MULTI);
+
+        this.rect = [
+            this.pos[0] - this.size, this.pos[1] - this.size,
+            this.size << 1, this.size << 1
+        ];
+    }
+
+    ResetInfo(ownerPlanet, humans) {
+        this.owner = ownerPlanet.owner;
+        this.color = ownerPlanet.color;
+        this.humans = humans;
     }
 
     ResetDir() {
@@ -23,13 +35,8 @@ export default class Spaceship {
     }
 
     Update(frame) {
-        //if (this.active == true && this.target != null) {
-        //let normDir = Utils.Normalize(this.Dir);
-        //this.pos[0] += this.speed * normDir[0];
-        //this.pos[1] += this.speed * normDir[1];
 
-
-        let normDir = this.Dir;//Utils.Normalize(this.Dir);
+        let normDir = this.Dir;
         this.frameDelta[0] = this.speed * frame * normDir[0];
         this.frameDelta[1] = this.speed * frame * normDir[1];
 
@@ -37,6 +44,8 @@ export default class Spaceship {
         this.lastPos[1] = this.pos[1];
         this.pos[0] += this.frameDelta[0];
         this.pos[1] += this.frameDelta[1];
+        this.rect[0] = this.pos[0] - this.size;
+        this.rect[1] = this.pos[1] - this.size;
 
         this.maxFrame = frame;
         this.currFrame = 0;
@@ -56,7 +65,7 @@ export default class Spaceship {
         this.renderPos[1] = this.lastPos[1] + this.frameDelta[1] * this.currFrame / this.maxFrame;
         if (this.currFrame < this.maxFrame)
             this.currFrame++;
-        gameRes.DrawCircle(this.renderPos, 5 * Utils.MULTI);
+        gameRes.DrawCircle(this.renderPos, this.size);
         return true;
     }
 
