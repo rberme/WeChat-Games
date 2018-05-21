@@ -66,8 +66,8 @@ export default class Planet {
     Update(frame) {
         if (this.humans > this.maxHuman) {
             this.accGrow -= this.grow;
-            if (this.accGrow <= 0) {
-                this.accGrow += 1000;
+            while (this.accGrow <= 0) {
+                this.accGrow += 500;
                 this.humans -= 1;
             }
             return;
@@ -75,7 +75,7 @@ export default class Planet {
 
         if (this.owner > 0) {
             this.accGrow += this.grow;
-            if (this.accGrow >= 1000) {
+            while (this.accGrow >= 1000) {
                 this.accGrow -= 1000;
                 this.humans += 1
             }
@@ -97,8 +97,8 @@ export default class Planet {
     Draw(gameRes) {
 
         gameRes.DrawCircle(this.center, this.radius, this.color);
-        gameRes.RenderText("ID: " + this.id, [this.center[0], this.center[1] - 4000], 5, "white");
-        gameRes.RenderText("Owner: " + this.owner, this.center, 5, "white");
+        gameRes.RenderText("ID: " + this.id, [this.center[0], this.center[1] - 4000], 15, "white");
+        gameRes.RenderText("Owner: " + this.owner, this.center, 15, "white");
 
         if (this.renderHumans < this.humans) {
             this.renderHumans += Utils.SHIPHUMANS;
@@ -109,6 +109,6 @@ export default class Planet {
             if (this.renderHumans < this.humans)
                 this.renderHumans = this.humans
         }
-        gameRes.RenderText("Humans: " + this.renderHumans, [this.center[0], this.center[1] + 4000], 5, "white");
+        gameRes.RenderText("Humans: " + this.renderHumans, [this.center[0], this.center[1] + 4000], 15, "white");
     }
 }

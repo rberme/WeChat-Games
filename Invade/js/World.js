@@ -16,7 +16,7 @@ export default class World {
         this.waitShips = [];
         this.flyShips = [];
 
-        this.cmdEmu = [[1, 1, 7]]
+
 
         this.quadTree = new QuadTree([0, 0, screenWidth << Utils.MULTI, screenHeight << Utils.MULTI]);
 
@@ -50,29 +50,49 @@ export default class World {
         }
     }
 
-    Update(frame) {
+    Update(frame, updateCmd) {
 
+        // if (updateCmd!=null) {
+        //     for (let i in updateCmd) {
+        //         let cmd = updateCmd[i];
+        //         let userId = cmd[0];
+        //         let startIdx = cmd[1];
+        //         let endIdx = cmd[2];
+        //         let startPlanet = this.planets[startIdx];
+        //         if (userId != startPlanet.id)
+        //             continue;
+        //         let humans = startPlanet.Launch()
+        //         while (humans > 0) {
+        //             if (humans >= Utils.SHIPHUMANS) {
+        //                 this.ShipLaunch(startIdx, endIdx, Utils.SHIPHUMANS);
+        //                 humans -= Utils.SHIPHUMANS;
+        //             } else {
+        //                 this.ShipLaunch(startIdx, endIdx, humans);
+        //                 humans = 0;
+        //             }
+        //         }
+        //     }
+        // }
 
-        for (let i in this.cmdEmu) {
-            let cmd = this.cmdEmu[i];
+        if (updateCmd.length == 3) {
+            let cmd = updateCmd;
             let userId = cmd[0];
             let startIdx = cmd[1];
             let endIdx = cmd[2];
             let startPlanet = this.planets[startIdx];
-            if (userId != startPlanet.id)
-                continue;
-            let humans = startPlanet.Launch()
-            while (humans > 0) {
-                if (humans >= Utils.SHIPHUMANS) {
-                    this.ShipLaunch(startIdx, endIdx, Utils.SHIPHUMANS);
-                    humans -= Utils.SHIPHUMANS;
-                } else {
-                    this.ShipLaunch(startIdx, endIdx, humans);
-                    humans = 0;
+            if (userId == startPlanet.owner) {
+                let humans = startPlanet.Launch()
+                while (humans > 0) {
+                    if (humans >= Utils.SHIPHUMANS) {
+                        this.ShipLaunch(startIdx, endIdx, Utils.SHIPHUMANS);
+                        humans -= Utils.SHIPHUMANS;
+                    } else {
+                        this.ShipLaunch(startIdx, endIdx, humans);
+                        humans = 0;
+                    }
                 }
             }
         }
-        this.cmdEmu = [];
 
 
 

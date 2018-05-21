@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+var hub = newHub()
+
 type clients struct {
 }
 
@@ -22,7 +24,6 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	hub := newHub()
 	go hub.run()
 	//http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

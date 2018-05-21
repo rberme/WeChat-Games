@@ -11,7 +11,6 @@ export default class Spaceship {
         this.lastPos = [0, 0];
 
         this.frameDelta = [0, 0];
-        this.renderPos = [0, 0];
 
         this.maxFrame = 0;
         this.currFrame = 0;
@@ -60,12 +59,12 @@ export default class Spaceship {
         // if (this.active == false)
         //     return;
         //gameRes.RenderText("world", 100, 100, 100);
-
-        this.renderPos[0] = this.lastPos[0] + this.frameDelta[0] * this.currFrame / this.maxFrame;
-        this.renderPos[1] = this.lastPos[1] + this.frameDelta[1] * this.currFrame / this.maxFrame;
+        let renderPos = [];
+        renderPos[0] = this.lastPos[0] + this.frameDelta[0] * this.currFrame / this.maxFrame;
+        renderPos[1] = this.lastPos[1] + this.frameDelta[1] * this.currFrame / this.maxFrame;
         if (this.currFrame < this.maxFrame)
             this.currFrame++;
-        gameRes.DrawCircle(this.renderPos, this.size);
+        gameRes.DrawCircle(renderPos, this.size);
         return true;
     }
 

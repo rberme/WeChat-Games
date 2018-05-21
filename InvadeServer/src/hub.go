@@ -4,10 +4,6 @@
 
 package main
 
-import (
-	"time"
-)
-
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -34,7 +30,7 @@ func newHub() *Hub {
 }
 
 func (h *Hub) run() {
-	go h.mainLoop()
+	//go h.mainLoop()
 	for {
 		select {
 		case client := <-h.register:
@@ -57,14 +53,16 @@ func (h *Hub) run() {
 	}
 }
 
-func (h *Hub) mainLoop() {
-	for {
-		if len(optBuffer) > 0 {
-			h.broadcast <- optBuffer[0]
-			optBuffer = [][]byte{}
-		} else {
-			h.broadcast <- []byte("0")
-		}
-		time.Sleep(time.Millisecond * 20)
-	}
-}
+// func (h *Hub) mainLoop() {
+// 	for {
+// 		if len(h.clients) > 1 {
+// 			if len(optBuffer) > 0 {
+// 				h.broadcast <- optBuffer[0]
+// 				optBuffer = [][]byte{}
+// 			} else {
+// 				h.broadcast <- []byte("[123]")
+// 			}
+// 		}
+// 		time.Sleep(time.Millisecond * 67)
+// 	}
+// }

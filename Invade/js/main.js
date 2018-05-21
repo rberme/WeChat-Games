@@ -13,36 +13,41 @@ export default class Main {
     constructor() {
         // 维护当前requestAnimationFrame的id
         this.aniId = 0
+        this.updateCmdBuff = [];
 
-        // wx.connectSocket({
-        //     url: "ws://192.168.0.189:8338/ws",
-        //     header: {
-        //         // "Access-Control-Allow-Origin": "*",
-        //         // "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-        //         // "Access-Control-Allow-Headers": "*",
-        //         "Origin": "http://192.168.0.189:8338"
-        //     }
-        // })
-        // wx.onSocketMessage(this.loop.bind(this))
-        // wx.onSocketError(function (res) {
-        //     console.log('websocket fail');
-        // })
+        wx.connectSocket({
+            url: "ws://192.168.0.189:8338/ws",
+            header: {
+                // "Access-Control-Allow-Origin": "*",
+                // "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+                // "Access-Control-Allow-Headers": "*",
+                // "Origin": "http://192.168.0.189:8338"
+            }
+        })
+        wx.onSocketMessage(this.OnSocketMessage.bind(this))
+        wx.onSocketError(function (res) {
+            console.log('websocket fail');
+        })
 
-        // wx.onSocketOpen(this.OnSocketOpen.bind(this))
+        wx.onSocketOpen(this.OnSocketOpen.bind(this))
 
-        this.Init();
+        //this.Init();
     }
 
+    OnSocketMessage(res) {
+        if (res.data != "[123]")
+            console.log(JSON.parse(res.data));
+        if (res.data != null) {
+            this.updateCmdBuff.push(JSON.parse(res.data));
+        }
 
+    }
 
     OnSocketOpen(res) {
         console.log('websocket success');
         this.Init();
     }
 
-    OnSocketMessage(res) {
-
-    }
 
     Init() {
         this.touchPoses = [-1, -1, -1, -1, -1];
@@ -53,12 +58,12 @@ export default class Main {
         wx.onTouchEnd(this.onTouchEndEventHandler.bind(this));
         wx.onTouchCancel(this.onTouchCancelEventHandler.bind(this));
 
-        this.frame = 0;
+        this.updateFrame = 0;
         this.world = new World(canvas.width, canvas.height);
         this.restart()
 
 
-        this.world.CreatePlanets(0, [{ id: 1, color: "blue" }]);
+        this.world.CreatePlanets(0, [{ id: 1, color: "blue" }, { id: 2, color: "red" }]);
     }
 
 
@@ -71,7 +76,7 @@ export default class Main {
         this.touchCurrPoses[0][0] = x;
         this.touchCurrPoses[0][1] = y;
 
-        this.touchPoses[0] = this.world.ConvertToPlanetPos(1, [x, y]);
+        this.touchPoses[0] = this.world.ConvertToPlanetPos(2, [x, y]);
         //this.startIdx = this.world.MoveStart(this.touchPoses[0]);
     }
 
@@ -89,9 +94,12 @@ export default class Main {
     }
 
     onTouchEndEventHandler(e) {
-
+        if (this.touchCurrPoses[0][0] < 0) {
+            wx.sendSocketMessage({
+                data: JSON.stringify([2, parseInt(this.touchPoses[0]), parseInt(this.touchCurrPoses[0][1])]),
+            })
+        }
         this.touchPoses[0] = -1;
-
 
 
         //this.startIdx = -1;
@@ -149,21 +157,19 @@ export default class Main {
     }
 
     // 游戏逻辑更新主函数
-    update(frame) {
-        this.world.Update(frame);
+    update(frame, frameData) {
+
+        this.world.Update(frame, frameData);
     }
 
     // 实现游戏帧循环
     loop() {
-        // if (res.data.length > 1) {
-        //     console.log(res.data);
-        //     this.world.startIdx = parseInt(res.data[0]);
-        //     this.world.endIdx = parseInt(res.data[2]);
-        //     this.world.MoveOne();
-        // }
-        this.frame++
-        if (this.frame % 4 == 0)// && this.frame < 80)
-            this.update(4)
+        let frameData = this.updateCmdBuff.shift();
+        if (frameData != null) {// && this.frame < 80)
+            this.updateFrame++
+            this.update(4, frameData)
+        }
+
         this.render()
 
         this.aniId = requestAnimationFrame(
