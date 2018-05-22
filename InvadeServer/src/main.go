@@ -24,11 +24,9 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	go hub.run()
-	//http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
-	})
+	go hub.start()
+	http.HandleFunc("/", serveHome)
+	http.HandleFunc("/ws", serveWs)
 	err := http.ListenAndServe("192.168.0.189:8338", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

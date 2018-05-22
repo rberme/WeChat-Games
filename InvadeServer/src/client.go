@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"log"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -27,12 +26,20 @@ var (
 	newline = []byte{'\n'}
 	space   = []byte{' '}
 )
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+
+// var upgrader = websocket.Upgrader{
+// 	ReadBufferSize:  1024,
+// 	WriteBufferSize: 1024,
+// }
+
+//
+type message struct {
+	Sender    int    `json:"sender,omitempty"`
+	Recipient string `json:"recipient,omitempty"`
+	Content   string `json:"content,omitempty"`
 }
 
-var optBuffer [][]byte
+//var optBuffer [][]byte
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
@@ -55,20 +62,15 @@ func (c *Client) read() {
 		hub.unregister <- c
 		c.conn.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, data, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
+			hub.unregister <- c
+			c.conn.Close()
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		optBuffer = append(optBuffer, message)
-		//c.hub.broadcast <- message
+		jsonMessage, _ := json.Marshal(&message{Sender: c.id, Content: string(data)})
+		hub.broadcast <- jsonMessage
 	}
 }
 
@@ -78,51 +80,33 @@ func (c *Client) read() {
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
 func (c *Client) write() {
-	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		ticker.Stop()
 		c.conn.Close()
 	}()
 	for {
 		select {
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
-		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
+			c.conn.WriteMessage(websocket.TextMessage, message)
 		}
 	}
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func serveWs(w http.ResponseWriter, r *http.Request) {
+	//conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := (&websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		}}).Upgrade(w, r, nil)
+
 	if err != nil {
-		log.Println(err)
+		http.NotFound(w, r)
 		return
 	}
 	client := &Client{conn: conn, send: make(chan []byte, 256)}

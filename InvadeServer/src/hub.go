@@ -29,24 +29,23 @@ func newHub() *Hub {
 	}
 }
 
-func (h *Hub) run() {
-	//go h.mainLoop()
+func (me *Hub) start() {
 	for {
 		select {
-		case client := <-h.register:
-			h.clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
+		case client := <-me.register:
+			me.clients[client] = true
+		case client := <-me.unregister:
+			if _, ok := me.clients[client]; ok {
+				delete(me.clients, client)
 				close(client.send)
 			}
-		case message := <-h.broadcast:
-			for client := range h.clients {
+		case message := <-me.broadcast:
+			for client := range me.clients {
 				select {
 				case client.send <- message:
 				default:
 					close(client.send)
-					delete(h.clients, client)
+					delete(me.clients, client)
 				}
 			}
 		}
