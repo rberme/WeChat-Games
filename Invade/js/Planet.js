@@ -85,7 +85,7 @@ export default class Planet {
         //     if (this.launchHuman > 4) {
         //         this.launchedHuman += 4;
         //         this.launchHuman -= 4;
-
+        
         //     } else {
         //         this.launchedHuman += this.launchHuman;
         //         this.launchHuman = 0;

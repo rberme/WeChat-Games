@@ -17,12 +17,6 @@ export default class Main {
 
         wx.connectSocket({
             url: "ws://192.168.0.189:8338/ws",
-            header: {
-                // "Access-Control-Allow-Origin": "*",
-                // "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-                // "Access-Control-Allow-Headers": "*",
-                // "Origin": "http://192.168.0.189:8338"
-            }
         })
         wx.onSocketMessage(this.OnSocketMessage.bind(this))
         wx.onSocketError(function (res) {
@@ -34,9 +28,10 @@ export default class Main {
         //this.Init();
     }
 
+
     OnSocketMessage(res) {
-        if (res.data != "[123]")
-            console.log(JSON.parse(res.data));
+        // if (res.data != "[123]")
+        //     console.log(JSON.parse(res.data));
         if (res.data != null) {
             this.updateCmdBuff.push(JSON.parse(res.data));
         }
@@ -50,8 +45,8 @@ export default class Main {
 
 
     Init() {
-        this.touchPoses = [-1, -1, -1, -1, -1];
-        //this.touchValid = [false, false, false, false, false]
+        this.touchTarget = [-1, -1, -1, -1, -1];
+        this.touchPlanets = [[], [], [], [], [],]
         this.touchCurrPoses = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
         wx.onTouchStart(this.onTouchStartEventHandler.bind(this));
         wx.onTouchMove(this.onTouchMoveEventHandler.bind(this));
@@ -62,7 +57,7 @@ export default class Main {
         this.world = new World(canvas.width, canvas.height);
         this.restart()
 
-
+        this.userId = 1;
         this.world.CreatePlanets(0, [{ id: 1, color: "blue" }, { id: 2, color: "red" }]);
     }
 
@@ -71,44 +66,71 @@ export default class Main {
     onTouchStartEventHandler(e) {
         //e.type == PlatformDifference[this.platform].touchstart
 
-        let x = e.touches[0].clientX << Utils.MULTI
-        let y = e.touches[0].clientY << Utils.MULTI
-        this.touchCurrPoses[0][0] = x;
-        this.touchCurrPoses[0][1] = y;
+        this.touchCurrPoses[0][0] = e.touches[0].clientX << Utils.MULTI
+        this.touchCurrPoses[0][1] = e.touches[0].clientY << Utils.MULTI
 
-        this.touchPoses[0] = this.world.ConvertToPlanetPos(2, [x, y]);
-        //this.startIdx = this.world.MoveStart(this.touchPoses[0]);
+        let temp = this.world.ConvertToPlanetPos(this.userId, this.touchCurrPoses[0]);
+        if (temp >= 0 && temp < 100) {
+            let pList = this.touchPlanets[0];
+            pList[pList.length] = temp;
+        }
+        this.touchTarget[0] = -1;
     }
 
     onTouchMoveEventHandler(e) {
-        if (this.touchPoses[0] >= 0) {
-            this.touchCurrPoses[0][0] = e.touches[0].clientX << Utils.MULTI
-            this.touchCurrPoses[0][1] = e.touches[0].clientY << Utils.MULTI
+        // if (this.touchPoses[0] >= 0) {
+        //     this.touchCurrPoses[0][0] = e.touches[0].clientX << Utils.MULTI
+        //     this.touchCurrPoses[0][1] = e.touches[0].clientY << Utils.MULTI
 
-            let temp = this.world.ConvertToPlanetPos(-1, this.touchCurrPoses[0]);
-            if (temp >= 0 && temp != this.touchPoses[0]) {
-                this.touchCurrPoses[0][0] = -1;
-                this.touchCurrPoses[0][1] = temp;
+        //     let temp = this.world.ConvertToPlanetPos(this.userId, this.touchCurrPoses[0]);
+        //     if (temp >= 0 && temp < 100) {//连接自己的星球
+
+        //     }
+        //     return;
+        //     if (temp >= 0 && temp != this.touchPoses[0]) {
+        //         this.touchCurrPoses[0][0] = -1;
+        //         this.touchCurrPoses[0][1] = temp;
+        //     }
+        // }
+        this.touchCurrPoses[0][0] = e.touches[0].clientX << Utils.MULTI
+        this.touchCurrPoses[0][1] = e.touches[0].clientY << Utils.MULTI
+
+        let pList = this.touchPlanets[0];
+        if (pList.length > 0) {
+            let temp = this.world.ConvertToPlanetPos(this.userId, this.touchCurrPoses[0]);
+
+            if (temp > 100)
+                this.touchTarget[0] = temp - 100
+            else this.touchTarget[0] = temp;
+
+            if (temp >= 0 && temp < 100) {//连接自己的星球
+                for (let i = 0; i < pList.length; i++) {
+                    if (pList[i] == temp) {
+                        return;
+                    }
+                }
+                if (pList.length < 5)
+                    pList[pList.length] = temp;
             }
         }
     }
 
     onTouchEndEventHandler(e) {
-        if (this.touchCurrPoses[0][0] < 0) {
+        let pList = this.touchPlanets[0];
+        if (pList.length > 0 && this.touchTarget[0] >= 0) {
+            let cmd = "[";
+            for (let i = 0; i < pList.length; i++) {
+                if (pList[i] == this.touchTarget[0])
+                    continue;
+                cmd += pList[i] + ",";
+            }
+            cmd += this.touchTarget[0] + "]";
+            console.log("发送:" + cmd);
             wx.sendSocketMessage({
-                data: JSON.stringify([2, parseInt(this.touchPoses[0]), parseInt(this.touchCurrPoses[0][1])]),
+                data: cmd,
             })
         }
-        this.touchPoses[0] = -1;
-
-
-        //this.startIdx = -1;
-        //this.world.MoveOne();
-        // if (this.world.startIdx >= 0 && this.world.endIdx >= 0) {
-        //     wx.sendSocketMessage({
-        //         data: this.world.startIdx + "," + this.world.endIdx,
-        //     })
-        // }
+        this.touchPlanets[0] = [];
     }
 
     onTouchCancelEventHandler(e) {
@@ -142,18 +164,24 @@ export default class Main {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
         this.world.Draw(gameRes);
 
-        // if (this.startIdx >= 0) {
-        //     let fingerPos = [this.touchPoses[0][0] << Utils.MULTI, this.touchPoses[0][1] << Utils.MULTI];
-        //     gameRes.DrawLine(this.world.planets[this.startIdx].center, this.endIdx >= 0 ? this.world.planets[this.endIdx].center : fingerPos);
+
+        // for (let i = 0; i < this.touchPoses.length; ++i) {
+        //     if (this.touchPoses[i] >= 0) {
+        //         gameRes.DrawLine(this.world.planets[this.touchPoses[i]].center,
+        //             this.touchCurrPoses[i][0] < 0 ? this.world.planets[this.touchCurrPoses[i][1]].center : this.touchCurrPoses[i]);
+        //     }
         // }
-
-
-        for (let i = 0; i < this.touchPoses.length; ++i) {
-            if (this.touchPoses[i] >= 0) {
-                gameRes.DrawLine(this.world.planets[this.touchPoses[i]].center,
-                    this.touchCurrPoses[i][0] < 0 ? this.world.planets[this.touchCurrPoses[i][1]].center : this.touchCurrPoses[i]);
+        let pList = this.touchPlanets[0];
+        if (pList.length > 0) {
+            //console.log(pList)
+            let targetPos = this.touchTarget[0] < 0 ? this.touchCurrPoses[0] : this.world.planets[this.touchTarget[0]].center;
+            for (let i = 0; i < pList.length; i++) {
+                if (pList[i] == this.touchTarget[0])
+                    continue;
+                gameRes.DrawLine(this.world.planets[pList[i]].center, targetPos);
             }
         }
+
     }
 
     // 游戏逻辑更新主函数

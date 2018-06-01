@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -45,6 +44,9 @@ type message struct {
 type Client struct {
 	id int
 
+	roomID   int
+	roomcast chan<- string
+
 	// The websocket connection.
 	conn *websocket.Conn
 
@@ -69,8 +71,8 @@ func (c *Client) read() {
 			c.conn.Close()
 			break
 		}
-		jsonMessage, _ := json.Marshal(&message{Sender: c.id, Content: string(data)})
-		hub.broadcast <- jsonMessage
+		//jsonMessage, _ := json.Marshal(&message{Sender: c.id, Content: string(data)})
+		c.roomcast <- string(data) //<- &message{Sender: c.roomID, Content: string(data)} //jsonMessage
 	}
 }
 
@@ -98,7 +100,7 @@ func (c *Client) write() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func serveWs(cID int32, w http.ResponseWriter, r *http.Request) {
 	//conn, err := upgrader.Upgrade(w, r, nil)
 	conn, err := (&websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
@@ -109,7 +111,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	client := &Client{conn: conn, send: make(chan []byte, 256)}
+	client := &Client{id: int(cID), conn: conn, send: make(chan []byte, 256)}
 	hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

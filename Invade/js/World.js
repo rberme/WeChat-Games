@@ -32,6 +32,7 @@ export default class World {
             pl.grow = p.grow;
             this.planets.push(pl)
             this.quadTree.insert(pl);
+            pl.owner = 1;
         }
         for (let i in players) {
             let p = players[i];
@@ -52,15 +53,37 @@ export default class World {
 
     Update(frame, updateCmd) {
 
-        // if (updateCmd!=null) {
-        //     for (let i in updateCmd) {
-        //         let cmd = updateCmd[i];
-        //         let userId = cmd[0];
-        //         let startIdx = cmd[1];
-        //         let endIdx = cmd[2];
-        //         let startPlanet = this.planets[startIdx];
-        //         if (userId != startPlanet.id)
-        //             continue;
+        if (updateCmd.length > 1) {
+            //for (let i in updateCmd) {
+            for (let i = 1; i < updateCmd.length; i++) {
+                let cmd = updateCmd[i];
+                //let userId = cmd[0];
+                //let startIdx = cmd[1];
+
+                let endIdx = cmd[cmd.length - 1];
+                for (let j = 0; j < cmd.length - 1; j++) {
+                    let startPlanet = this.planets[cmd[j]];
+                    let humans = startPlanet.Launch()
+                    while (humans > 0) {
+                        if (humans >= Utils.SHIPHUMANS) {
+                            this.ShipLaunch(cmd[j], endIdx, Utils.SHIPHUMANS);
+                            humans -= Utils.SHIPHUMANS;
+                        } else {
+                            this.ShipLaunch(cmd[j], endIdx, humans);
+                            humans = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if (updateCmd.length == 3) {
+        //     let cmd = updateCmd;
+        //     let userId = cmd[0];
+        //     let startIdx = cmd[1];
+        //     let endIdx = cmd[2];
+        //     let startPlanet = this.planets[startIdx];
+        //     if (userId == startPlanet.owner) {
         //         let humans = startPlanet.Launch()
         //         while (humans > 0) {
         //             if (humans >= Utils.SHIPHUMANS) {
@@ -73,26 +96,6 @@ export default class World {
         //         }
         //     }
         // }
-
-        if (updateCmd.length == 3) {
-            let cmd = updateCmd;
-            let userId = cmd[0];
-            let startIdx = cmd[1];
-            let endIdx = cmd[2];
-            let startPlanet = this.planets[startIdx];
-            if (userId == startPlanet.owner) {
-                let humans = startPlanet.Launch()
-                while (humans > 0) {
-                    if (humans >= Utils.SHIPHUMANS) {
-                        this.ShipLaunch(startIdx, endIdx, Utils.SHIPHUMANS);
-                        humans -= Utils.SHIPHUMANS;
-                    } else {
-                        this.ShipLaunch(startIdx, endIdx, humans);
-                        humans = 0;
-                    }
-                }
-            }
-        }
 
 
 
@@ -180,10 +183,10 @@ export default class World {
             let planet = this.planets[i];
             let deltaX = (pos[0]) - planet.center[0];
             let deltaY = (pos[1]) - planet.center[1];
-            if (owner >= 0 && owner != planet.owner)
-                continue;
+            // if (owner >= 0 && owner != planet.owner)
+            //     continue;
             if (deltaX * deltaX + deltaY * deltaY <= planet.radius * planet.radius) {
-                return planet.id;
+                return parseInt(planet.id) + (owner == planet.owner ? 0 : 100);
             }
         }
         return -1;

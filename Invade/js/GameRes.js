@@ -1,5 +1,6 @@
 import Utils from "./Utils"
 
+const OWidth = 514;
 
 let instance
 export default class GameRes {
@@ -8,6 +9,10 @@ export default class GameRes {
             return instance;
         instance = this;
         this.ctx = ctx;
+
+        this.images = [];
+        this.images[0] = wx.createImage();
+        this.images[0].src = 'images/O.png';
 
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -30,6 +35,7 @@ export default class GameRes {
     }
 
     DrawCircle(center, radius, color = "gray") {
+
         this.ctx.fillStyle = color;
 
         var startAngleInRadians = 0;
@@ -40,6 +46,13 @@ export default class GameRes {
 
         this.ctx.stroke();
         this.ctx.fill();
+        // this.ctx.drawImage(
+        //     this.images[0],
+        //     (center[0] - radius) / Utils.MULTIV,
+        //     (center[1] - radius) / Utils.MULTIV,
+        //     (radius * 2) / Utils.MULTIV,
+        //     (radius * 2) / Utils.MULTIV
+        // )
     }
 
     DrawLine(start, end, color = "gray") {
