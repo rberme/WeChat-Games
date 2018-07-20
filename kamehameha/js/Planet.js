@@ -9,6 +9,8 @@ const PLANETYPE = {
     BLACKHOLE: 4,//黑洞
     LIGHTER: 5,//光源
     STONE: 6,//障碍物
+    ENDER: 7,//终点
+    POLYGON: 8,//多边形
 }
 
 //const Sqrt2 = 1.4142135623730950488016887242097
@@ -41,6 +43,8 @@ export default class Planet {
             this.normalDir = [100, -200];
             Utils.Normalize(this.normalDir);
             this.RefreshReflectPlane();
+        } else if (this.typ == PLANETYPE.POLYGON) {
+            this.points = [[-80, -40], [0, -60], [10, 50], [-30, 60], [-10, 20]]
         }
 
     }
@@ -97,7 +101,7 @@ export default class Planet {
 
 
     Render(gameRes) {
-        gameRes.DrawCircle(this.center, this.radius, this.color);
+        //gameRes.DrawCircle(this.center, this.radius, this.color);
         if (this.typ == PLANETYPE.LIGHTER) {
             gameRes.DrawLine(this.center, [this.center[0] + this.normalDir[0] * 20, this.center[1] + this.normalDir[1] * 20])
         } else if (this.typ == PLANETYPE.ROTATER) {
@@ -110,6 +114,8 @@ export default class Planet {
             //this.outLine.Render(gameRes);
             //}
 
+        } else if (this.typ == PLANETYPE.POLYGON) {
+            gameRes.DrawPolygon(this.center, this.points, "red", "fill")
         }
     }
 
@@ -118,28 +124,84 @@ export default class Planet {
             case PLANETYPE.BLACKHOLE:
                 return this.LightWarp(inLine, outLine);
                 break;
+            case PLANETYPE.ENDER:
+                //PASS
+
+                break;
+            case PLANETYPE.POLYGON:
+                return this.PolygonReflect(inLine, outLine);
+                break;
             default:
                 return this.LightReflect(inLine, outLine)
                 break;
         }
     }
 
+    //射线与线段的焦点
+    RaySegment(segStart, segEnd, rayStart, rayDir) {
+        let segDir = [segEnd[0] - segStart[0], segEnd[1] - segStart[1]]
+        //let p = [rayStart[0] + rayDir[0] * len, rayStart[1] + rayDir[1] * len];
+        //(rayStart[0] + rayDir[0] * len - segStart[0]) / (rayStart[1] + rayDir[1] * len - segStart[1]) = (segDir[0]) / (segDir[1])
+        //(rayStart[0] + rayDir[0] * len - segStart[0]) * segDir[1] = (rayStart[1] + rayDir[1] * len - segStart[1]) * segDir[0]
+        //rayStart[0] * segDir[1] + rayDir[0] * segDir[1] * len - segStart[0] * segDir[1] = rayStart[1] * segDir[0] + rayDir[1] * segDir[0] * len - segStart[1] * segDir[0]
+        //(rayDir[0] * segDir[1]  - rayDir[1] * segDir[0]) * len = (rayStart[1] * segDir[0] - segStart[1] * segDir[0] - rayStart[0] * segDir[1] + segStart[0] * segDir[1])
+
+        let len = (rayStart[1] * segDir[0] - segStart[1] * segDir[0] - rayStart[0] * segDir[1] + segStart[0] * segDir[1]) / (rayDir[0] * segDir[1] - rayDir[1] * segDir[0])
+        //let temp = [rayStart[0] + rayDir[0] * len, rayStart[1] + rayDir[1] * len];
+        let temp0 = rayStart[0] + rayDir[0] * len;
+        let temp1 = rayStart[1] + rayDir[1] * len;
+
+
+        if ((segStart[0] - temp0) * (segEnd[0] - temp0) + (segStart[1] - temp1) * (segEnd[1] - temp1) <= 0 &&
+            (temp0 - rayStart[0]) * rayDir[0] + (temp1 - rayStart[1]) * rayDir[1] >= 0) {
+            return [temp0, temp1, len];
+        }
+        return null;
+    }
+
+    PolygonReflect(inLine, outLine) {
+        let minLine = null;
+        let segStart = [0, 0];
+        let segEnd = [0, 0];
+
+        let pCount = this.points.length
+        for (let i = 0; i < pCount; i++) {
+            segStart[0] = this.points[i][0] + this.center[0];
+            segStart[1] = this.points[i][1] + this.center[1];
+            segEnd[0] = this.points[(i + 1) % pCount][0] + this.center[0];
+            segEnd[1] = this.points[(i + 1) % pCount][1] + this.center[1];
+
+
+            let temp = this.RaySegment(segStart, segEnd, inLine.start, inLine.dir);
+            if (temp == null)
+                continue;
+            if (minLine == null)
+                minLine = temp;
+            else if (minLine[2] > temp[2]) {
+                minLine = temp;
+            }
+        }
+        if (minLine != null) {
+            inLine.len = minLine[2];
+            // outLine.start[0] = minLine[0];
+            // outLine.start[1] = minLine[1];
+
+            // // minLine = (this.normalDir[0] * -inLine.dir[0] + this.normalDir[1] * -inLine.dir[1]) * 2;
+
+            // // outLine.dir[0] = this.normalDir[0] * minLine - -inLine.dir[0];
+            // // outLine.dir[1] = this.normalDir[1] * minLine - -inLine.dir[1];
+            // outLine.len = 1;
+            // outLine.isAble = true;
+            return true;
+        }
+        return false;
+    }
 
     LightReflect(inLine, outLine) {
 
-        let wallDir = [this.end[0] - this.start[0], this.end[1] - this.start[1]]
-
-        //let p = [inLine.start[0] + inLine.dir[0] * len, inLine.start[1] + inLine.dir[1] * len];
-        //(inLine.start[0] + inLine.dir[0] * len - this.start[0]) / (inLine.start[1] + inLine.dir[1] * len - this.start[1]) = (wallDir[0]) / (wallDir[1])
-        //(inLine.start[0] + inLine.dir[0] * len - this.start[0]) * wallDir[1] = (inLine.start[1] + inLine.dir[1] * len - this.start[1]) * wallDir[0]
-        //inLine.start[0] * wallDir[1] + inLine.dir[0] * wallDir[1] * len - this.start[0] * wallDir[1] = inLine.start[1] * wallDir[0] + inLine.dir[1] * wallDir[0] * len - this.start[1] * wallDir[0]
-        //(inLine.dir[0] * wallDir[1]  - inLine.dir[1] * wallDir[0]) * len = (inLine.start[1] * wallDir[0] - this.start[1] * wallDir[0] - inLine.start[0] * wallDir[1] + this.start[0] * wallDir[1])
-
-        let len = (inLine.start[1] * wallDir[0] - this.start[1] * wallDir[0] - inLine.start[0] * wallDir[1] + this.start[0] * wallDir[1]) / (inLine.dir[0] * wallDir[1] - inLine.dir[1] * wallDir[0])
-        let temp = [inLine.start[0] + inLine.dir[0] * len, inLine.start[1] + inLine.dir[1] * len];
-
-        if (this.InBound(temp[0], temp[1])) {
-            inLine.len = len;
+        let temp = this.RaySegment(this.start, this.end, inLine.start, inLine.dir);
+        if (temp != null) {
+            inLine.len = temp[2];
             outLine.start[0] = temp[0];
             outLine.start[1] = temp[1];
 
@@ -154,28 +216,6 @@ export default class Planet {
         return false;
     }
 
-    //
-    // LightWarpOld(inLine, outLine) {
-    //     //Utils.Normalize(lightDir);
-    //     let light2center = [this.center[0] - inLine.start[0], this.center[1] - inLine.start[1]]
-
-    //     let lenLC = Utils.Normalize(light2center);
-
-    //     let sideLen = inLine.dir[0] * light2center[0] + inLine.dir[1] * light2center[1];
-    //     let sideLen2 = sideLen * sideLen;
-    //     let tanθ2 = (1 - sideLen2) / sideLen2;
-
-    //     let lenLC2 = lenLC * lenLC;
-    //     let b2_4ac = 4 * lenLC2 - 4 * (1 + tanθ2) * (lenLC2 - this.radius * this.radius);
-    //     //let result2 = 1000;
-    //     if (b2_4ac >= 0) {
-    //         let sqrt_b2_4ac = Utils.Q_Sqrt(b2_4ac)//Math.sqrt(b2_4ac)//
-    //         let result2 = (2 * lenLC + sqrt_b2_4ac) / (2 * (1 + tanθ2))
-    //         inLine.len = Utils.Q_Sqrt(result2 * result2 * (1 + tanθ2));
-    //         return true;
-    //     }
-    //     return false;
-    // }
 
     LightWarp(inLine, outLine) {
         //Utils.Normalize(lightDir);

@@ -1,17 +1,17 @@
 import GameRes from "./GameRes"
 import Utils from "./Utils"
 import World from "./World"
-//import test from "./test"
+import test from "./test"
 
 
 let canvas = wx.createCanvas()
 let ctx = canvas.getContext('2d')
 let gameRes = new GameRes(ctx, canvas.width, canvas.height);
 
-const tempArr = [];
-tempArr["abc"] = function () {
-    console.log("abc");
-}
+// const tempArr = [];
+// tempArr["abc"] = function () {
+//     console.log("abc");
+// }
 /**
  * 游戏主函数
  */
@@ -25,6 +25,16 @@ export default class Main {
         wx.onTouchEnd(this.onTouchEndEventHandler.bind(this));
         wx.onTouchCancel(this.onTouchCancelEventHandler.bind(this));
 
+        // this.bannerAd = wx.createBannerAd({
+        //     adUnitId: "adunit-94ea2ec91f2766ff",
+        //     style: {
+        //         left: 0,
+        //         top: 0,
+        //         width: canvas.width,
+        //         height: 100,
+        //     }
+        // })
+        // this.bannerAd.show();
         this.restart()
     }
 
@@ -78,8 +88,8 @@ export default class Main {
 
         this.bindLoop = this.loop.bind(this)
 
-        // 清除上一局的动画
-        window.cancelAnimationFrame(this.aniId);
+        // // 清除上一局的动画
+        // window.cancelAnimationFrame(this.aniId);
 
         this.aniId = window.requestAnimationFrame(
             this.bindLoop,
@@ -126,23 +136,23 @@ export default class Main {
 
 
 
-    test(lightSrc, lightDir, center, radius) {
-        Utils.Normalize(lightDir);
-        let light2center = [center[0] - lightSrc[0], center[1] - lightSrc[1]]
-        let lenLC = Utils.Normalize(light2center);
+    // test(lightSrc, lightDir, center, radius) {
+    //     Utils.Normalize(lightDir);
+    //     let light2center = [center[0] - lightSrc[0], center[1] - lightSrc[1]]
+    //     let lenLC = Utils.Normalize(light2center);
 
-        let sideLen = lightDir[0] * light2center[0] + lightDir[1] * light2center[1];
-        let sideLen2 = sideLen * sideLen;
-        let tanθ2 = (1 - sideLen2) / sideLen2;
+    //     let sideLen = lightDir[0] * light2center[0] + lightDir[1] * light2center[1];
+    //     let sideLen2 = sideLen * sideLen;
+    //     let tanθ2 = (1 - sideLen2) / sideLen2;
 
-        let lenLC2 = lenLC * lenLC;
-        let b2_4ac = 4 * lenLC2 - 4 * (1 + tanθ2) * (lenLC2 - radius * radius);
-        let result2 = 500;
-        if (b2_4ac > 0) {
-            let sqrt_b2_4ac = Utils.Q_Sqrt(b2_4ac)//Math.sqrt(b2_4ac)//
-            result2 = (2 * lenLC - sqrt_b2_4ac) / (2 * (1 + tanθ2))
-            result2 = Utils.Q_Sqrt(result2 * result2 * (1 + tanθ2));
-        }
-        return result2;
-    }
+    //     let lenLC2 = lenLC * lenLC;
+    //     let b2_4ac = 4 * lenLC2 - 4 * (1 + tanθ2) * (lenLC2 - radius * radius);
+    //     let result2 = 500;
+    //     if (b2_4ac > 0) {
+    //         let sqrt_b2_4ac = Utils.Q_Sqrt(b2_4ac) //Math.sqrt(b2_4ac)//
+    //         result2 = (2 * lenLC - sqrt_b2_4ac) / (2 * (1 + tanθ2))
+    //         result2 = Utils.Q_Sqrt(result2 * result2 * (1 + tanθ2));
+    //     }
+    //     return result2;
+    // }
 }

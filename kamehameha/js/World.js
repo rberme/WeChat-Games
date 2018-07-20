@@ -1,34 +1,44 @@
-
-import Planet from "./Planet"
+//import Planet from "./Planet"
+import Mirror from "./Mirror"
 import Line from "./Line"
 
 import Utils from "./Utils"
 
+const CELLSIZE = 32;
 
 export default class World {
     constructor() {
-
+        this.testData = {
+            wide: 5,
+            higt: 5,
+            lighter: 0,
+            end: 24,
+            box: [1, 2, 3],
+            mirror: 3,
+        }
     }
 
-    Init() {
+    Init(mapData) {
 
-        this.planets = [];
-        this.lighter = new Planet();
-        this.lighter.Init([100, 160], 50, 5)
-        this.planets.push(this.lighter);
+        // this.planets = [];
+        // this.lighter = new Planet();
+        // this.lighter.Init([100, 160], 50, 5)
+        // this.planets.push(this.lighter);
 
-        this.rotater = new Planet();
-        this.rotater.Init([300, 400], 50, 2)
-        this.planets.push(this.rotater);
+        // this.rotater = new Planet();
+        // this.rotater.Init([300, 400], 50, 2)
+        // this.planets.push(this.rotater);
 
-        this.rotater2 = new Planet();
-        this.rotater2.Init([100, 500], 50, 2)
-        this.planets.push(this.rotater2);
+        // this.rotater2 = new Planet();
+        // this.rotater2.Init([100, 500], 50, 2)
+        // this.planets.push(this.rotater2);
+
+        // this.polygon = new Planet();
+        // this.polygon.Init([300, 190], 50, 8)
+        // this.planets.push(this.polygon);
 
 
-        this.blackhole = new Planet();
-        this.blackhole.Init([300, 190], 50, 4)
-        this.planets.push(this.blackhole);
+
 
         this.lines = [];
         for (let i = 0; i < 30; ++i) {
@@ -43,6 +53,21 @@ export default class World {
         this.lastOutLinePlanet = -1;
 
     }
+
+    LevelStart(lv) {
+        let mapData = {
+            wide: 5,
+            high: 5,
+            lighter: 0,
+            end: 24,
+            box: [1, 2, 3],
+            mirror: 3,
+        }
+
+        this.lighter = new
+
+    }
+
 
     TouchStart(x, y) {
         // this.theLine.dir[0] = x - this.theLine.start[0]
@@ -115,7 +140,7 @@ export default class World {
             if (this.lines[i].dir[0] > 0) {
                 if (this.planets[j].center[0] + this.planets[j].radius < this.lines[i].start[0] - 0.01)
                     continue;
-            } else {/* inLine.dir[0]<=0 */
+            } else { /* inLine.dir[0]<=0 */
                 if (this.planets[j].center[0] - this.planets[j].radius > this.lines[i].start[0] + 0.01)
                     continue;
             }

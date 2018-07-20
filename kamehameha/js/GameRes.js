@@ -74,7 +74,7 @@ export default class GameRes {
 
         var startAngleInRadians = 0;
         var endAngleInRadians = Math.PI;
-        
+
 
         this.ctx.beginPath();
         this.ctx.arc(center[0], center[1], radius, startAngleInRadians, endAngleInRadians);
@@ -83,4 +83,15 @@ export default class GameRes {
         this.ctx.fill();
     }
 
+
+    DrawPolygon(center, points, color, typ) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(center[0] + points[0][0], center[1] + points[0][1]);
+        for (let i = 1; i < points.length; i++) {
+            this.ctx.lineTo(center[0] + points[i][0], center[1] + points[i][1]);
+        }
+        this.ctx[typ + 'Style'] = color;
+        this.ctx.closePath();
+        this.ctx[typ]();
+    }
 }
